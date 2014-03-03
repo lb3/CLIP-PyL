@@ -1,0 +1,59 @@
+
+* adhere to Style Guide for Python Code [[http://www.python.org/dev/peps/pep-0008/][(PEP8)]]
+** try [[https://pypi.python.org/pypi/autopep8][autopep8]]
+* EXPLICITLY DECLARE MPL BACKEND IN mpl_graphics routines
+** also, try using the [[http://matplotlib.org/users/whats_new.html#webagg-backend][WebAgg]] backend for interactive plots
+* add UNIT TESTS
+
+* BUGS
+** SamReader error reporting when input filepath cannot be read must be improved
+/storage/nkotb_BigGuy/LB_Bioinformatics/data_Projects/Kishore_SRP006474_Anal_Ago2_PAR-CLIP/full_coverage_mapping_sam/bwa_aligned_hg19/SRR189782.PP.bwa-hg19.sam not found
+WARNING: USE ONLY FOR SINGLE-END <=99 BP SINGLE END READS
+---------------------------------------------------------------------------
+AttributeError                            Traceback (most recent call last)
+/home/lbthrice/Desktop/testingWD/<ipython-input-1-25f7d84e24bc> in <module>()
+     27     sam_gen = SamReader(sam_fp)
+     28 
+---> 29     for d in sam_gen:
+     30         n_of_reads += 1
+     31 
+
+/home/lbthrice/Desktop/Python_Distributables/bioPyL-0.3dev/bioPyL/flatfile_parsing.py in __next__(self)
+    111 
+    112     def __next__(self):
+--> 113         if self.alignment:
+    114             self.raw = self.alignment
+    115             self.l = self.alignment.rstrip().split()
+
+AttributeError: 'SamReader' object has no attribute 'alignment'
+
+2.include __enter__ and __exit__ methods, move SamReader calls to context manager
+
+** Kishore HuR PAR-CLIP SRR189779 chokes clipPyL! The shelf file grows HUGE.
+*** Potential Work arounds:
+**** add an additional level of nesting to the coord value of the dict tree
+This would entail breaking the coord integer down by creating a node
+for the first three positions...this may save file space by reducing 
+the redundant info encoded in the integers
+**** ditch the shelf component altogether 
+maybe writing to memory and just dumping to an intermediate sqlite db
+will be faster ...the intermediate db can be joined to the main positional 
+db as it is created...you could parameterize the write-chunk option so that
+there is not memory overflow.
+
+** there is a one-off error in the iCLIP routine
+you must use the nt immediately upstream of the 
+mapped 5' read as the RT termination point 
+
+* distributable package design
+emulate dsign of ht-seq such that the user
+does not need to install the python package
+into their namespace...only need to include
+scripts in "bin" in their $PATH
+
+* add stuff
+** "get top" methods for the clipPyL database
+For example add a method to retrieve the top 100 most abundant
+t-to-c sites, or raw coverage sites...
+** parameterize the write-chunk size
+** parametrize the post-pipeline clean-up of the sam sqlite and fastq sqlite

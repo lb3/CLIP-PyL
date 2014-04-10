@@ -1,6 +1,6 @@
-===========
+========
 CLIP-PyL
-===========
+========
 
 CLIP-PyL can parse "crosslink signatures" from HITS-CLIP, PAR-CLIP or iCLIP
 data. The CLIP-PyL tools takes indexed .bam files and dumps the crosslink
@@ -22,10 +22,10 @@ can also be indicated in the output graphics if the user supplies .bed file(s)
 containing the locations of these elements.
 
 Installation
-=========
+============
 
 Dependencies
--------------
+------------
 
 * python >= 3.2 https://www.python.org/
 

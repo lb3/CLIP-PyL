@@ -1,0 +1,7 @@
+# see ignore ifle guidelines at:
+# http://git-scm.com/book/en/Git-Basics-Recording-Changes-to-the-Repository#Ignoring-Files
+#
+# ignore compiled python files
+*.pyc
+# ignore temporary files
+*~

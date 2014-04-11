@@ -1,0 +1,80 @@
+----
+TODO
+----
+* add UNIT TESTS
+** create sample data file with subsetted bam file + histones with stemloops
+
+**Always Remember**
+/Adhere to Style Guide for Python Code/
+[[http://www.python.org/dev/peps/pep-0008/][(PEP8)]]
+
+----------------------
+Major Change Necessary
+----------------------
+
+Must migrate to indexed bam file datatype. Pysam handles will be used.
+
+Reasons for the changes:
+
+* Kishore HuR PAR-CLIP SRR189779 chokes clipPyL!
+** The shelf file grows HUGE. I think this is due to the variety of chromosomal 
+   locations in the HuR dataset. This is because HuR binds to many different
+   transcripts. Therefore we are basically indexing the transcriptome. This is
+   too much data for this database type.
+* Illumina seq datafiles are only getting larger.
+
+* distributable package design emulate dsign of ht-seq such that the user
+  does not need to install the python package into their namespace...only 
+  need to include scripts in "bin" in their $PATH
+
+----------
+KNOWN BUGS
+----------
+
+* There may be a one-off error in the iCLIP routine. 
+  You must use the nt immediately upstream of the mapped 5' read as the RT 
+  termination point 
+
+* EXPLICITLY DECLARE MPL BACKEND IN mpl_graphics routines
+
+* Fix SamReader error reporting when
+** When input filepath cannot be read, the output is ugly::
+
+    /storage/nkotb_BigGuy/LB_Bioinformatics/data_Projects/Kishore_SRP006474_Anal_Ago2_PAR-CLIP/full_coverage_mapping_sam/bwa_aligned_hg19/SRR189782.PP.bwa-hg19.sam not found
+    WARNING: USE ONLY FOR SINGLE-END <=99 BP SINGLE END READS
+    ---------------------------------------------------------------------------
+    AttributeError                            Traceback (most recent call last)
+    /home/lbthrice/Desktop/testingWD/<ipython-input-1-25f7d84e24bc> in <module>()
+         27     sam_gen = SamReader(sam_fp)
+         28 
+    ---> 29     for d in sam_gen:
+         30         n_of_reads += 1
+         31 
+
+    /home/lbthrice/Desktop/Python_Distributables/bioPyL-0.3dev/bioPyL/flatfile_parsing.py in __next__(self)
+        111 
+        112     def __next__(self):
+    --> 113         if self.alignment:
+        114             self.raw = self.alignment
+        115             self.l = self.alignment.rstrip().split()
+
+    AttributeError: 'SamReader' object has no attribute 'alignment'
+
+    2.include __enter__ and __exit__ methods, move SamReader calls to context manager
+
+
+------
+Future
+------
+
+* try [[https://pypi.python.org/pypi/autopep8][autopep8]]
+
+* try using the new webAgg backend for interactive plots
+   [[http://matplotlib.org/users/whats_new.html#webagg-backend][WebAgg]]
+
+* implement resampling test 
+
+* "get top" methods for the clipPyL database
+  For example add a method to retrieve the top 100 most abundant
+  t-to-c sites, or raw coverage sites...
+

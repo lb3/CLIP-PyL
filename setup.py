@@ -1,11 +1,11 @@
 from distutils.core import setup
 
 setup(
-    name='BioPyL',
+    name='CLIP-PyL',
     version='0.1dev',
-    packages=['lbFuncs',],
+    packages=['clippyl',],
     scripts=['bin/...'],
     license='LICENSE.txt',
-    description='Lee\'s pile of pythonic biotools',
+    description='tools for finding crosslinked nucleotides in aligned CLIP-seq data',
     long_description=open('README.txt').read()
 )

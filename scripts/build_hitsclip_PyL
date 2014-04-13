@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.2
 
-from clip-pyl import hitsclip_pipeline
+from clippyl.scripts import hitsclip_pipeline
 
 hitsclip_pipeline.main()

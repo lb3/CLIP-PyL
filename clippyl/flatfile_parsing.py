@@ -655,6 +655,10 @@ class Bed6Reader():
     def __init__(self, inBedFP):
         print("WARNING: REMOVE HEADER FROM BEDFILE BEFORE USING THIS CLASS!")
         print("WARNING: BEDFILE HEADER IS NOT PARSED")
+        #TODO: Detect header by looking for word browser or track or # at 
+        # beginning of first lines. see:
+        # http://genome.ucsc.edu/FAQ/FAQformat.html#format1
+        # http://bedtools.readthedocs.org/en/latest/content/overview.html#headers-are-allowed-in-gff-and-bed-files
         
         try:
             self.fh = open(inBedFP, 'r')

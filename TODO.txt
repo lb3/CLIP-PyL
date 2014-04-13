@@ -4,6 +4,9 @@ TODO
 * add UNIT TESTS
 ** create sample data file with subsetted bam file + histones with stemloops
 
+*reorganize package properly such that clippyl.scripts can be built via
+ the distutils setup( scripts = '') function. See htseq package for template
+
 **Always Remember**
 /Adhere to Style Guide for Python Code/
 [[http://www.python.org/dev/peps/pep-0008/][(PEP8)]]

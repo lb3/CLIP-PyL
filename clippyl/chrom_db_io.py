@@ -288,7 +288,7 @@ class HitsClipSQLite(SQLiteBase):
         to the connected sqlite database.
         
         Note: if the cleav_db_fp is set to None then it is assumed that all
-        the reads in the sam file are adapater-clipped
+        the reads in the sam file are adapter-clipped
         '''
         #TODO: positional db can be a temporary file
         #TODO: sqlite file with sam and fq tables can be temporary

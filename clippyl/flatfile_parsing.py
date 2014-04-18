@@ -5,32 +5,46 @@ import re
 #from bioPyL.bioUtils.compareCoords import getOverlap
 #from bioPyL.bioFileRW.bedO import bed12_reader
 
-def parse_readid(read_id):
-    
+def readid_regex(read_id):
+    '''
+    Detect read id format and return a compiled regular expression object that can parse 
+    the tile coordinates.
+    '''
+    #http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers
+    #http://solexaqa.sourceforge.net/questions.htm#headers
     # regular expression to find tile number from Solexa fastq file sequence IDs
     # translated from SolexaQA code.
     # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
     #TODO: translate me 
     #https://docs.python.org/3.2/howto/regex.html
     
+    instrument_id = None #string, the unique instrument name
+    lane = None #integer
+    tile = None #integer
+    x_coord = None #integer, x-coordinate of the cluster within the tile
+    y_coord = None #integer, y-coordinate of the cluster within the tile
+    index_num = None #integer, index number for a multiplexed sample (0 for no indexing)
+    index_seq = None #string, index sequence
+    pair_member = None #integer, the member of a pair, 1 or 2 (paired-end or mate-pair reads only)
+    filter_fail = None #character, Y if the read fails filter (read is bad), N otherwise
+    control_bits = None #integer, 0 when none of the control bits are on, otherwise it is an even number
     tile_number = 0
     
-    if( $line =~ /\S+\s\S+/ ){
-    
-    # Cassava 1.8 variant
-    if( $line =~ /^@[\d\w\-\._]+:[\d\w]+:[\d\w\-]+:[\d\w]+:(\d+)/ ){
-    $tile_number = $1;
-    # Sequence Read Archive variant
-    }elsif( $line =~ /^@[\d\w\-\._\s]+:[\d\w]+:(\d+)/ ){
-    $tile_number = $1;
-    }
-    # All other variants
-    }elsif( $line =~ /^@[\d\w\-:\._]*:+\d*:(\d*):[\.\d]+:[\.\/\#\d\w]+$/ ){
-    $tile_number = $1;
-    }
+    if re.match(r'\S+\s\S+', read_id):
+        if re.match(r'^@[\d\w\-\._]+:[\d\w]+:[\d\w\-]+:[\d\w]+:(\d+)'):
+            # Cassava 1.8 variant
+            pass
+        elif re.match(r'^@[\d\w\-\._\s]+:[\d\w]+:(\d+)', read_id):
+            # Sequence Read Archive variant
+            pass
+    elif re.match(r'^@[\d\w\-:\._]*:+\d*:(\d*):[\.\d]+:[\.\/\#\d\w]+$'):
+        # All other variants
+        pass
+    else:
+        raise IOError('''CLIP-PyL does not recognize the read id format.\n
+                         The read id that CLIP-PyL attempted to parse is:\n
+                         {0}\n'''.format(read_id))
 
-if( !$tile_number ){
-die "Error: Lane ID at line number $line_counter not in correct Illumina format";
 
 #TODO: FIX FASTQREADER __init__ so that the program
 # exits gracefully if a bad fp is passed

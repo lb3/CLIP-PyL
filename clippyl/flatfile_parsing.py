@@ -5,6 +5,33 @@ import re
 #from bioPyL.bioUtils.compareCoords import getOverlap
 #from bioPyL.bioFileRW.bedO import bed12_reader
 
+def parse_readid(read_id):
+    
+    # regular expression to find tile number from Solexa fastq file sequence IDs
+    # translated from SolexaQA code.
+    # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
+    #TODO: translate me 
+    #https://docs.python.org/3.2/howto/regex.html
+    
+    tile_number = 0
+    
+    if( $line =~ /\S+\s\S+/ ){
+    
+    # Cassava 1.8 variant
+    if( $line =~ /^@[\d\w\-\._]+:[\d\w]+:[\d\w\-]+:[\d\w]+:(\d+)/ ){
+    $tile_number = $1;
+    # Sequence Read Archive variant
+    }elsif( $line =~ /^@[\d\w\-\._\s]+:[\d\w]+:(\d+)/ ){
+    $tile_number = $1;
+    }
+    # All other variants
+    }elsif( $line =~ /^@[\d\w\-:\._]*:+\d*:(\d*):[\.\d]+:[\.\/\#\d\w]+$/ ){
+    $tile_number = $1;
+    }
+
+if( !$tile_number ){
+die "Error: Lane ID at line number $line_counter not in correct Illumina format";
+
 #TODO: FIX FASTQREADER __init__ so that the program
 # exits gracefully if a bad fp is passed
 class FastqReader():

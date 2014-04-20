@@ -31,13 +31,13 @@ def readid_regex(read_id):
     tile_number = 0
     
     if re.match(r'\S+\s\S+', read_id):
-        if re.match(r'^@[\d\w\-\._]+:[\d\w]+:[\d\w\-]+:[\d\w]+:(\d+)'):
+        if re.match(r'^@[\d\w-._]+:[\d\w]+:[\d\w-]+:[\d\w]+:(\d+)'):
             # Cassava 1.8 variant
             pass
-        elif re.match(r'^@[\d\w\-\._\s]+:[\d\w]+:(\d+)', read_id):
+        elif re.match(r'^@[\d\w-._\s]+:[\d\w]+:(\d+)', read_id):
             # Sequence Read Archive variant
             pass
-    elif re.match(r'^@[\d\w\-:\._]*:+\d*:(\d*):[\.\d]+:[\.\/\#\d\w]+$'):
+    elif re.match(r'^@[\d\w-:._]*:+\d*:(\d*):[.\d]+:[./#\d\w]+$'):
         # All other variants
         pass
     else:

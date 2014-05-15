@@ -5,47 +5,6 @@ import re
 #from bioPyL.bioUtils.compareCoords import getOverlap
 #from bioPyL.bioFileRW.bedO import bed12_reader
 
-def readid_regex(read_id):
-    '''
-    Detect read id format and return a compiled regular expression object that can parse 
-    the tile coordinates.
-    '''
-    #http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers
-    #http://solexaqa.sourceforge.net/questions.htm#headers
-    # regular expression to find tile number from Solexa fastq file sequence IDs
-    # translated from SolexaQA code.
-    # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
-    #TODO: translate me 
-    #https://docs.python.org/3.2/howto/regex.html
-    
-    instrument_id = None #string, the unique instrument name
-    lane = None #integer
-    tile = None #integer
-    x_coord = None #integer, x-coordinate of the cluster within the tile
-    y_coord = None #integer, y-coordinate of the cluster within the tile
-    index_num = None #integer, index number for a multiplexed sample (0 for no indexing)
-    index_seq = None #string, index sequence
-    pair_member = None #integer, the member of a pair, 1 or 2 (paired-end or mate-pair reads only)
-    filter_fail = None #character, Y if the read fails filter (read is bad), N otherwise
-    control_bits = None #integer, 0 when none of the control bits are on, otherwise it is an even number
-    tile_number = 0
-    
-    if re.match(r'\S+\s\S+', read_id):
-        if re.match(r'^@[\d\w-._]+:[\d\w]+:[\d\w-]+:[\d\w]+:(\d+)'):
-            # Cassava 1.8 variant
-            pass
-        elif re.match(r'^@[\d\w-._\s]+:[\d\w]+:(\d+)', read_id):
-            # Sequence Read Archive variant
-            pass
-    elif re.match(r'^@[\d\w-:._]*:+\d*:(\d*):[.\d]+:[./#\d\w]+$'):
-        # All other variants
-        pass
-    else:
-        raise IOError('''CLIP-PyL does not recognize the read id format.\n
-                         The read id that CLIP-PyL attempted to parse is:\n
-                         {0}\n'''.format(read_id))
-
-
 #TODO: FIX FASTQREADER __init__ so that the program
 # exits gracefully if a bad fp is passed
 class FastqReader():
@@ -131,13 +90,69 @@ class FastqReader():
         ids with the fastq file it was derived from.
         '''
         #http://en.wikipedia.org/wiki/FASTQ_format
-        
         self.d['TOPID'] = self.d['TOPID'][:-2]
-        self.d['BOTID'] = self.d['BOTID'][:-2]
+        # note that BOTID is an optional field. If it is not present then
+        # it can result in index error here when sliced.
+        try:
+            self.d['BOTID'] = self.d['BOTID'][:-2]
+        except IndexError:
+            pass
         
         return
-
-
+    
+    def validate_readid(self):
+        '''Given a read id with a valid format, the format type will 
+           be returned. An error will be produced if it is not a valid 
+           read_id type'''
+        
+        # The parsing logic is based on the SolexaQA code.
+        # corresponds to ./LB_parse_qname_v2.3.pl
+        # http://solexaqa.sourceforge.net/
+        # NOTE: LB user group post: 
+        # https://groups.google.com/d/topic/solexaqa-users/Wj_fZbBqK2o/discussion
+        # FAQ: http://solexaqa.sourceforge.net/questions.htm#headers
+        # Translated to python:
+        # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
+        # https://docs.python.org/3.2/howto/regex.html
+        # All possible fields are indicated at the wikipedia page.
+        #TODO: get definition document from Illumina
+        #http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers
+        # set an error message to use when malformed entries are encountered
+        error_message = '''CLIP-PyL does not recognize the read id format.\n
+                           The read id that CLIP-PyL attempted to parse is:\n
+                           {0}\n'''
+        
+        tile_number = 0
+        space_split = self.d['TOPID'].split(' ')
+        if re.match(r'^\@[ES]R[RA][\d]+.[\d]+\s*', self.d['TOPID']) and len(space_split) > 1:
+            l = space_split[1].split(':')
+            if len(l) < 3:
+                raise IOError(error_message.format(self.d['TOPID']))
+            if len(l) < 8:
+                tile_number = l[-3]
+                format_type = 'typeA'
+            else:
+                tile_number = l[-4]
+                format_type = 'typeB'
+        elif self.d['TOPID'][0] == '@':
+            l = space_split[0].split(':')
+            if len(l) < 3:
+                raise IOError(error_message.format(self.d['TOPID']))
+            if len(l) < 8:
+                tile_number = l[-3]
+                format_type = 'typeC'
+            else:
+                tile_number = l[-4]
+                format_type = 'typeD'
+        else:
+            raise IOError(error_message.format(self.d['TOPID']))
+        
+        if tile_number == 0:
+            raise IOError(error_message.format(self.d['TOPID']))
+        else:
+            print('Read ID format detected: {0}'.format(format_type))
+        
+        return format_type
 
 def validate_fastq_format(fp):
     with FastqReader(fp) as g:
@@ -146,6 +161,7 @@ def validate_fastq_format(fp):
         g.__next__()
         if g.format_validator():
             print('fastq format recognized')
+            g.validate_readid()
             return True
         else:
             return False

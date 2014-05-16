@@ -18,11 +18,9 @@ class FastqReader():
     # hint: if you do not have a 'single line' fastq file then 
     # you may need to preprocess with fastx-toolkit's fasta_formatter
     
-    #TODO: write a method to detect quality encoding
-    #TODO: write a method to decode quality encoding
-    
     def __init__(self, filepath):
-        self.header = []
+        #a regex to parse the cluster coordinates from the read id (aka topid)
+        self.clust_coord_re = re.compile(r'^.*(:[0-9]+:[0-9]+:[0-9]+:[0-9]+).*$')
         try:
             self.fh = open(filepath)
             # read each line of read entry
@@ -66,124 +64,84 @@ class FastqReader():
         else:
             return True
     
-    def detect_pair_info(self):
-        '''
-        The read ids sometimes end with /1 or /2 to denote paired-end or
-        mate-pair reads. it can be usefule to remove it. 
-        ex: bwa seems to remove this tag from the ids in the 
-        output sam file that it generates so I need to remove it to compare
-        ids with the fastq file it was derived from.
-        '''
-        #http://en.wikipedia.org/wiki/FASTQ_format
+    def get_cluster_coords(self):
         
-        if self.d['TOPID'][-2] == '/':
-            return True
-        else:
-            return False
-    
-    def remove_pair_info(self):
-        '''
-        The read ids sometimes end with /1 or /2 to denote paired-end or
-        mate-pair reads. You can look for it with detect_fq_pair_info. 
-        usage example: bwa seems to remove this tag from the ids in the 
-        output sam file that it generates so I need to remove it to compare
-        ids with the fastq file it was derived from.
-        '''
-        #http://en.wikipedia.org/wiki/FASTQ_format
-        self.d['TOPID'] = self.d['TOPID'][:-2]
-        # note that BOTID is an optional field. If it is not present then
-        # it can result in index error here when sliced.
-        try:
-            self.d['BOTID'] = self.d['BOTID'][:-2]
-        except IndexError:
-            pass
+        coord_s, = self.clust_coord_re.findall(self.d['TOPID'])
+        lane, tile, x_coord, y_coord = coord_s[1:].split(':')
         
-        return
-    
-    def validate_readid(self):
-        '''Given a read id with a valid format, the format type will 
-           be returned. An error will be produced if it is not a valid 
-           read_id type'''
-        
-        # The parsing logic is based on the SolexaQA code.
-        # corresponds to ./LB_parse_qname_v2.3.pl
-        # http://solexaqa.sourceforge.net/
-        # NOTE: LB user group post: 
-        # https://groups.google.com/d/topic/solexaqa-users/Wj_fZbBqK2o/discussion
-        # FAQ: http://solexaqa.sourceforge.net/questions.htm#headers
-        # Translated to python:
-        # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
-        # https://docs.python.org/3.2/howto/regex.html
-        # All possible fields are indicated at the wikipedia page.
-        #TODO: get definition document from Illumina
-        #http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers
-        # set an error message to use when malformed entries are encountered
-        error_message = '''CLIP-PyL does not recognize the read id format.\n
-                           The read id that CLIP-PyL attempted to parse is:\n
-                           {0}\n'''
-        
-        tile_number = 0
-        space_split = self.d['TOPID'].split(' ')
-        if re.match(r'^\@[ES]R[RA][\d]+.[\d]+\s*', self.d['TOPID']) and len(space_split) > 1:
-            l = space_split[1].split(':')
-            if len(l) < 3:
-                raise IOError(error_message.format(self.d['TOPID']))
-            if len(l) < 8:
-                tile_number = l[-3]
-                format_type = 'typeA'
-            else:
-                tile_number = l[-4]
-                format_type = 'typeB'
-        elif self.d['TOPID'][0] == '@':
-            l = space_split[0].split(':')
-            if len(l) < 3:
-                raise IOError(error_message.format(self.d['TOPID']))
-            if len(l) < 8:
-                tile_number = l[-3]
-                format_type = 'typeC'
-            else:
-                tile_number = l[-4]
-                format_type = 'typeD'
-        else:
-            raise IOError(error_message.format(self.d['TOPID']))
-        
-        if tile_number == 0:
-            raise IOError(error_message.format(self.d['TOPID']))
-        else:
-            print('Read ID format detected: {0}'.format(format_type))
-        
-        return format_type
+        return (int(lane), int(tile), int(x_coord), int(y_coord))
 
-def validate_fastq_format(fp):
+def validate_fastq_file(fp):
     with FastqReader(fp) as g:
-        print('Validating format for file:')
+        print('validating fastq file format for:')
         print(fp)
         g.__next__()
         if g.format_validator():
             print('fastq format recognized')
-            g.validate_readid()
+            print('validating sequence id format')
+            detect_readid_type(g.d['TOPID'])
             return True
         else:
             return False
 
-def detect_fq_pair_info(fp):
-    '''
-    The read ids sometimes end with /1 or /2 to denote paired-end or
-    mate-pair reads. It can be useful to remove it. 
-    ex: bwa seems to remove this tag from the ids in the 
-    output sam file that it generates so I need to remove it to compare
-    ids with the fastq file it was derived from.
-    '''
-    #http://en.wikipedia.org/wiki/FASTQ_format
-    with FastqReader(fp) as g:
-        print('Checking for matepair tag:')
-        print(fp)
-        g.__next__()
-        if g.detect_pair_info():
-            print('mate pair tag detected')
-            return True
+def detect_readid_type(readid):
+    '''Given a read id with a valid format, the format type will 
+       be returned. An error will be produced if it is not a valid 
+       read_id type'''
+    
+    # The parsing logic is based on the SolexaQA code.
+    # corresponds to ./LB_parse_qname_v2.3.pl
+    # http://solexaqa.sourceforge.net/
+    # NOTE: LB user group post: 
+    # https://groups.google.com/d/topic/solexaqa-users/Wj_fZbBqK2o/discussion
+    # FAQ: http://solexaqa.sourceforge.net/questions.htm#headers
+    # Translated to python:
+    # Perl regex help: http://www.cs.tut.fi/~jkorpela/perl/regexp.html
+    # https://docs.python.org/3.2/howto/regex.html
+    # All possible fields are indicated at the wikipedia page.
+    # http://en.wikipedia.org/wiki/FASTQ_format#Illumina_sequence_identifiers
+    # Also see the CASAVA v1.8.2 user guide: 
+    # http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
+    
+    # set an error message to use when malformed entries are encountered
+    error_message = 'CLIP-PyL does not recognize the read id format.\n'
+    error_message +='The read id that CLIP-PyL attempted to parse is:\n'
+    error_message +='{0}\n'
+    
+    tile_number = 0
+    space_split = readid.split(' ')
+    if re.match(r'^\@[ES]R[RA][\d]+.[\d]+\s*', readid) and len(space_split) > 1:
+        l = space_split[1].split(':')
+        if len(l) < 3:
+            raise IOError(error_message.format(readid))
+        if len(l) < 8:
+            tile_number = l[-3]
+            format_type = 'typeA'
         else:
-            return False
+            tile_number = l[-4]
+            format_type = 'typeB'
+    elif readid[0] == '@':
+        l = space_split[0].split(':')
+        if len(l) < 3:
+            raise IOError(error_message.format(readid))
+        if len(l) < 8:
+            if '.' in l[-2] or '.' in l[-1]:
+                raise IOError(error_message.format(readid))
+            else:
+                tile_number = l[-3]
+                format_type = 'typeC'
+        else:
+            tile_number = l[-4]
+            format_type = 'typeD'
+    else:
+        raise IOError(error_message.format(readid))
+    
+    if tile_number == 0:
+        raise IOError(error_message.format(readid))
+    else:
+        print('valid sequence id format detected ({0})'.format(format_type))
+    
+    return format_type
 
 #TODO:Rename this class to bwa-sam? because all method work on BWA-derived Sam files.
 class SamReader():

@@ -76,45 +76,45 @@ def input_fastq(in_fp, out_db_fp):
     print(' from the fastq file at:')
     print(in_fp)
     
-    from clippyl.flatfile_parsing import (FastqReader,
-                                          detect_fq_pair_info,
-                                          validate_fastq_format)
+    from clippyl.flatfile_parsing import FastqReader, validate_fastq_file
     
     # validate the file format and read id format. this is necessary because
     # the read id must be valid to ensure that the integer key will be unique
-    validate_fastq_format(in_fp)
+    validate_fastq_file(in_fp)
     
-    # bwa seems to remove the matepair tag from the id, therefore it must
-    # be removed here to enable comparison downstream
-    print('Checking for mate-pair tag in fastq...')
-    matepair_tag_bool = False
-    if detect_fq_pair_info(in_fp):
-        matepair_tag_bool = True
-    else:
-        pass
-    
-    fq_gen = FastqReader(in_fp)
-    
-    stat_dict = {'readid_cnt' : 0}
-    
-    out_db_fh = SQLiteBase(out_db_fp)
-    
-    def row_gen():
-        for d in fq_gen:
-            t = (readid_int_keygen(d['TOPID'], 
-                                   strip_matepair_info = matepair_tag_bool),
-                )
-            stat_dict['readid_cnt'] += 1
-            if stat_dict['readid_cnt'] % 1000000 == 0:
-                print('{0} reads written'.format(str(stat_dict['readid_cnt'])))
-            yield t
-    
-    out_db_fh.c.execute('''CREATE TABLE adapter_reads(
-                           read_id_key INT not null,
-                           PRIMARY KEY(read_id_key))''')
-    
-    sql_stmnt = '''INSERT INTO adapter_reads(read_id_key) VALUES (?)'''
-    out_db_fh.c.executemany(sql_stmnt, row_gen())
+    with FastqReader(in_fp) as fq_gen:
+        
+        stat_dict = {'readid_cnt' : 0}
+        
+        out_db_fh = SQLiteBase(out_db_fp)
+        
+        def row_gen():
+            for d in fq_gen:
+                t = fq_gen.get_cluster_coords()
+                stat_dict['readid_cnt'] += 1
+                if stat_dict['readid_cnt'] % 1000000 == 0:
+                    print('{0} reads written'.format(str(stat_dict['readid_cnt'])))
+                yield t
+        
+        out_db_fh.c.execute('''CREATE TABLE read_coords(
+                               lane INT not null, 
+                               tile INT not null, 
+                               x_coord INT not null, 
+                               y_coord INT not null,
+                               PRIMARY KEY(lane, tile, x_coord, y_coord))''')
+        
+        sql_stmnt = '''INSERT INTO read_coords(lane, 
+                                               tile, 
+                                               x_coord, 
+                                               y_coord) VALUES (?,?,?,?)'''
+        
+        try:
+            out_db_fh.c.executemany(sql_stmnt, row_gen())
+        except sqlite3.IntegrityError:
+            print( fq_gen.d['TOPID'] )
+            print( fq_gen.get_cluster_coords() )
+            print( stat_dict['readid_cnt'] )
+            
     
     out_db_fh.conn.commit()
     out_db_fh.conn.close()
@@ -123,44 +123,31 @@ def input_fastq(in_fp, out_db_fp):
     
     return stat_dict['readid_cnt']
 
-def readid_int_keygen(readid, strip_matepair_info = True):
-    '''Generates a unique integer from the readid'''
-    # Must be a valid read-id format to ensure that the cluster coordinates
-    # can be parsed for use downstream during generation of the unique integer
-    # key. Must inspect the readid upstream with validate_readid (see below)
-    if strip_matepair_info:
-        readid
-    
-    #TODO: strip matepair if found
-    # concatenating all integers will create a unique integer key
-    readid_key = ''.join([c for c in readid if c.isdigit()])
-    
-    return readid_key
 
 
 #TODO: actually code th main function here and link it up to the
 # sample data in the clippyl directory structure so that it can be
 # run as a test.
 ##===================MAIN FUNC AREA
-import time
+#import time
 
-print('#######################################')
-print('extracting readids from fastq file')
+#print('#######################################')
+#print('extracting readids from fastq file')
 
-in_fp = '/storage/Ziggy_BigGuy/LB_Bioinformatics/data_Projects/Brooks_HITS_CLIP_SLBP/cleavage_site_mapping/preprocessed_Fastq_discardUnclipped/s_1xS01_sequence.PP.fastq'
-#in_fp = '/home/lbthrice/Desktop/fastq_sample/clippedOnly/SRR189782.PP.fastq'
-out_db_fp = 'test_qname2_TILEnum2.dat'
-start_time = time.time()
-n = input_fastq(in_fp, out_db_fp)
-elapsed_time = time.time() - start_time
+#in_fp = '/storage/Ziggy_BigGuy/LB_Bioinformatics/data_Projects/Brooks_HITS_CLIP_SLBP/cleavage_site_mapping/preprocessed_Fastq_discardUnclipped/s_1xS01_sequence.PP.fastq'
+##in_fp = '/home/lbthrice/Desktop/fastq_sample/clippedOnly/SRR189782.PP.fastq'
+#out_db_fp = 'test_qname2_TILEnum2.dat'
+#start_time = time.time()
+#n = input_fastq(in_fp, out_db_fp)
+#elapsed_time = time.time() - start_time
 
-print('qnames were written and indexed to:')
-print(out_db_fp)
-print('The amount of time that elapsed during the process was:')
-print('{0:.2f}'.format(round(elapsed_time,2)) + ' seconds')
-print('The number of reads that were processed is:')
-print(str(n))
-print('#######################################')
+#print('qnames were written and indexed to:')
+#print(out_db_fp)
+#print('The amount of time that elapsed during the process was:')
+#print('{0:.2f}'.format(round(elapsed_time,2)) + ' seconds')
+#print('The number of reads that were processed is:')
+#print(str(n))
+#print('#######################################')
 
 
 

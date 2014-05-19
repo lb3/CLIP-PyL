@@ -108,7 +108,7 @@ def hitsCliPyL_plot(   bed_gen,
         #TODO: move legend to its own axes (at top)
         #TODO: remove x-axis labels from ax3 and ax2
         #TODO: widen left margin to accomodate y-axis labels
-        # note: axes instatiated with pyplot in this way will be drawn from bottom 
+        # note: axes instantiated with pyplot in this way will be drawn from bottom 
         # such that cleav_ax is bottom and raw_ax is top
         
         cleav_ax = plt.axes([0.085, 0.15, 0.9, 0.2])

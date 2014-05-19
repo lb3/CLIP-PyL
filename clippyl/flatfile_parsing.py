@@ -19,8 +19,7 @@ class FastqReader():
     # you may need to preprocess with fastx-toolkit's fasta_formatter
     
     def __init__(self, filepath):
-        #a regex to parse the cluster coordinates from the read id (aka topid)
-        self.clust_coord_re = re.compile(r'^.*(:[0-9]+:[0-9]+:[0-9]+:[0-9]+).*$')
+        
         try:
             self.fh = open(filepath)
             # read each line of read entry
@@ -63,26 +62,16 @@ class FastqReader():
             return False
         else:
             return True
-    
-    def get_cluster_coords(self):
-        
-        coord_s, = self.clust_coord_re.findall(self.d['TOPID'])
-        lane, tile, x_coord, y_coord = coord_s[1:].split(':')
-        
-        return (int(lane), int(tile), int(x_coord), int(y_coord))
 
-def validate_fastq_file(fp):
-    with FastqReader(fp) as g:
-        print('validating fastq file format for:')
-        print(fp)
-        g.__next__()
-        if g.format_validator():
-            print('fastq format recognized')
-            print('validating sequence id format')
-            detect_readid_type(g.d['TOPID'])
-            return True
-        else:
-            return False
+#a regex to parse the cluster coordinates from the read id (aka topid)
+clust_coord_re = re.compile(r'^.*(:[0-9]+:[0-9]+:[0-9]+:[0-9]+).*$')
+
+def get_cluster_coords(readid):
+    
+    coord_s, = clust_coord_re.findall(readid)
+    lane, tile, x_coord, y_coord = coord_s[1:].split(':')
+    
+    return (int(lane), int(tile), int(x_coord), int(y_coord))
 
 def detect_readid_type(readid):
     '''Given a read id with a valid format, the format type will 
@@ -142,6 +131,19 @@ def detect_readid_type(readid):
         print('valid sequence id format detected ({0})'.format(format_type))
     
     return format_type
+
+def validate_fastq_file(fp):
+    with FastqReader(fp) as g:
+        print('validating fastq file format for:')
+        print(fp)
+        g.__next__()
+        if g.format_validator():
+            print('fastq format recognized')
+            print('validating sequence id format')
+            detect_readid_type(g.d['TOPID'])
+            return True
+        else:
+            return False
 
 #TODO:Rename this class to bwa-sam? because all method work on BWA-derived Sam files.
 class SamReader():

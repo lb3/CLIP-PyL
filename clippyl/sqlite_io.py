@@ -56,12 +56,12 @@ class ReadidSQLite(SQLiteBase):
     containing the set of adapter-clipped reads. This fastq file is produced 
     upstream during pre-processing. Typically, I run the AdapterClipper software 
     from the FastX toolkit with the argument "discardUnclipped" to produce this 
-    file. Note that the adapter-clipped reads are a subset of the total set of 
-    reads. This custom SQLite database class contains methods to import the 
-    read ids from the adapter-clipped read file and store unique integer keys 
-    corresponding to the read ids. This enables the user to align the total set 
-    of all reads and then perform cleavage mapping from that bam file by using the 
-    SQLite database to identify the adapter-clipped reads.
+    file. This custom SQLite database class contains methods to import the 
+    read ids from the adapter-clipped read file and parse their cluster 
+    coordinates, which serve as unique integer keys. This enables the user to 
+    align the total set of all reads and then perform cleavage mapping from 
+    that bam file by using the SQLite database to identify the adapter-clipped 
+    reads.
     """
     
     def input_fastq(self, in_fp):

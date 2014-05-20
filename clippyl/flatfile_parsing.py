@@ -219,7 +219,7 @@ class SamReader():
         self.fh.close()
     
     def __iter__(self):
-        return self #TODO: can you just put a yield statement in the __next__ method?
+        return self
     
     def __next__(self):
         if self.alignment:

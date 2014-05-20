@@ -13,6 +13,9 @@ from matplotlib import ticker
 
 from clipPyL.flatfile_parsing import Bed6Reader
 
+
+#TODO: connect to bam file, not clippyl, use methods there to get the plot vectors
+#TODO: use idx stats to get normalizing factor
 #this function takes a tup of clipPyL db that hav been loaded
 #NOTE THIS CAN ALSO BE USED TO PLOT iCLIP data (same signature components)
 def hitsCliPyL_plot(   bed_gen, 

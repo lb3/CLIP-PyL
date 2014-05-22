@@ -192,6 +192,8 @@ class Bed6SQLite(SQLiteBase):
         
         return self.c.fetchall()
 
+
+###TESTING
 #TODO: actually code th main function here and link it up to the
 # sample data in the clippyl directory structure so that it can be
 # run as a test.

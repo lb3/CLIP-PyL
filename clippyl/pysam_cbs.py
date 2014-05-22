@@ -14,12 +14,6 @@ class fetch_hitsclip_dict:
         self.l = []
         return
     
-    def __enter__(self):
-        return self
-    
-    def __exit__(self, *exc_info):
-        self.fh.close()
-    
     def __call__(self, alignment):
         #print(type(alignment))
         ##NOTE: the alignment object is <class 'pysam.csamtools.AlignedRead'>

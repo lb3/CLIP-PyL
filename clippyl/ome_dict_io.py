@@ -67,7 +67,10 @@ class OmeDict():
         
         data = []
         for coord in range(start, end):
-            data.append(self.d[strand][reference].get(coord, 0))
+            try:
+                data.append(self.d[strand][reference].get(coord, 0))
+            except KeyError:
+                data.append(0)
         
         if orient_strands and strand == '-':
             data.reverse()

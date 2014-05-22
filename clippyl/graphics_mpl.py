@@ -1,18 +1,12 @@
-
-
-#TODO: add support for bed12 for spliced rna that
-# uses the siteTup2sigTup methods and then combines
-# the splices the coverageL together, marks the union 
-# in the plot
-# example: /storage/Ziggy_BigGuy/LB_Bioinformatics/data_Projects/Brooks_HITS_CLIP_SLBP/chromPlots/LB_draw_hist_gene_model_linegraph_vRawCover.py
-
+import pysam
 import math
 
+from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
+from clippyl.vector_factory import build_hitsclip_vectors
 import matplotlib.pyplot as plt
 from matplotlib import ticker
-
-from clipPyL.flatfile_parsing import Bed6Reader
-
+#for multi-page pdf see http://matplotlib.sourceforge.net/faq/howto_faq.html#save-multiple-plots-to-one-pdf-file
+from matplotlib.backends.backend_pdf import PdfPages
 
 #TODO: connect to bam file, not clippyl, use methods there to get the plot vectors
 #TODO: use idx stats to get normalizing factor

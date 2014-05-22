@@ -54,4 +54,23 @@ class OmeDict():
                 self.d[strand][reference][coord] = data
         
         return
+    
+    def get_data(self, ome_coords, orient_strands = True):
+        """
+        Retrieve the data corresponding to the given coordinates from 
+        the OmeDict. A list of integers is returned (aka a coverage vector).
+        The orient_strands argument caused the minus strand data lists to
+        reverse such that the top and bottom strand vectors are oriented in the
+        same left to right (5'->3') polarity.
+        """
+        reference, start, end, strand = ome_coords
+        
+        data = []
+        for coord in range(start, end):
+            data.append(self.d[strand][reference].get(coord, 0))
+        
+        if orient_strands and strand == '-':
+            data.reverse()
+        
+        return data
 

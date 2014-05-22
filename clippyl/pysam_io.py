@@ -1,4 +1,4 @@
-import pysam
+
 #docs:
 #pysam development branch: https://github.com/pysam-developers/pysam
 #pysam docs: http://pysam.readthedocs.org/en/latest/

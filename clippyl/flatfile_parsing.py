@@ -608,11 +608,12 @@ class Bed6Reader():
         return self
     
     def __next__(self):
+        
         if self.bedline:
             self.l = self.bedline.rstrip().split('\t')
-            self.d = {'chrom' : self.l[0],
-                      'chromStart': int(self.l[1]), #start coord of transcribed fragment for + 
-                      'chromEnd' : int(self.l[2]),
+            self.d = {'ref' : self.l[0],
+                      'start': int(self.l[1]), #start coord of transcribed fragment for + 
+                      'end' : int(self.l[2]),
                       'name' : str(self.l[3]),
                       'score' : float(self.l[4]), #TODO: may need int() in some instances ?!
                       'strand' : self.l[5]}
@@ -626,31 +627,23 @@ class Bed6Reader():
             return self.d
         return self.d
     
-    #TODO: test this code!
-    def calcGraphParams(self, flankint = 0):
+    def calc_graph_limits(self, flank_size = 0):
         """
-        calculate the parameters needed for a graph of the genemodel and surrounding region (specified by flankint).
+        calculate the coordinates of the graph limits
+        incuding a flanking region, the length of which 
+        specified by flank_size.
         """
-        # find template code at ./BioPyL/BioPyL-0.1dev/incorporateme/LB_Plotter_Master_v16/LB_code_library/01_Gene_Model_Data_Constructor_v02.py
         
-        gmIntervalStart = self.d['chromStart'] - flankint
-        gmIntervalEnd = self.d['chromEnd'] + flankint
-            
-        # deriving important parameters for gene model construction
-        # According to the bed12 file format we know that the fields represent the following values:
-        # chromosome, chromStart, chromEnd, name, score, strand, thickStart (start codon), thickEnd (stop codon), itemRgb, blockCount (number of exons), blockSizes (exon sizes), blockStarts (exons starts)
+        graph_start = self.d['start'] - flankint
+        graph_end = self.d['end'] + flankint
         
-        priTranscriptLength = self.d['chromEnd'] - self.d['chromStart']
-        
-        # NOTE: this has some redundant entries 
-        # NOTE: I have denoted "absolute for entries that are in absolute chromosome coords.
         dataDict = {'name' : self.d['name'],
-                    'chrom' : self.d['chrom'], #absolute
-                    'chromStart' : self.d['chromStart'], #absolute
-                    'gmIntervalStart' : gmIntervalStart, #absolute
-                    'chromEnd' : self.d['chromEnd'], #absolute
-                    'gmIntervalEnd' : gmIntervalEnd, #absolute
-                    'strand' : self.d['strand'], #absolute
+                    'ref' : self.d['ref'],
+                    'start' : self.d['start'],
+                    'graph_start' : graph_start,
+                    'end' : self.d['end'],
+                    'graph_end' : graph_end,
+                    'strand' : self.d['strand'],
                     }
         
         return dataDict

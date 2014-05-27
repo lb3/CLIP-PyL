@@ -161,9 +161,9 @@ class Bed6SQLite(SQLiteBase):
                     
                     stat_dict['n_of_intervals'] += 1
                     
-                    yield (d['chrom'], 
-                           d['chromStart'], 
-                           d['chromEnd'], 
+                    yield (d['ref'], 
+                           d['start'], 
+                           d['end'], 
                            d['name'], 
                            d['score'], 
                            d['strand'])
@@ -174,21 +174,21 @@ class Bed6SQLite(SQLiteBase):
         self.conn.commit()
         return
     
-    def siteTup_lookup(self, query_siteTup):
+    def ome_coord_lookup(self, query_coord):
         '''
-        Look for all intervals that overlap with the query_siteTup.
+        Look for all intervals that overlap with the query_coord.
         Return a list of dictionaries, one for each bed6 entry
         that intersects with the query_siteTup.
         '''
         # q_ prefix denotes "query"
-        q_chrom, q_chromStart, q_chromEnd, q_strand = query_siteTup
+        q_ref, q_start, q_end, q_strand = query_coord
         
-        t = (q_strand, q_chrom, q_chromStart, q_chromEnd, q_chromStart, q_chromEnd)
+        t = (q_strand, q_chrom, q_start, q_end, q_start, q_end)
         
         self.c.execute('''SELECT * FROM bed6_intervals
                             WHERE strand = ?
-                            AND chrom = ?
-                            AND (chromStart BETWEEN ? AND ? OR chromEnd BETWEEN ? AND ?)''', t)
+                            AND ref = ?
+                            AND (start BETWEEN ? AND ? OR end BETWEEN ? AND ?)''', t)
         
         return self.c.fetchall()
 

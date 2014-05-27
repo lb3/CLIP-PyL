@@ -637,16 +637,16 @@ class Bed6Reader():
         graph_start = self.d['start'] - flankint
         graph_end = self.d['end'] + flankint
         
-        dataDict = {'name' : self.d['name'],
-                    'ref' : self.d['ref'],
-                    'start' : self.d['start'],
-                    'graph_start' : graph_start,
-                    'end' : self.d['end'],
-                    'graph_end' : graph_end,
-                    'strand' : self.d['strand'],
+        d = {'name' : self.d['name'],
+             'ref' : self.d['ref'],
+             'start' : self.d['start'],
+             'graph_start' : graph_start,
+             'end' : self.d['end'],
+             'graph_end' : graph_end,
+             'strand' : self.d['strand'],
                     }
         
-        return dataDict
+        return d
 
 
 if __name__ == "__main__":

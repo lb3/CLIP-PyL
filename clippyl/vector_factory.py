@@ -33,7 +33,11 @@ class build_hitsclip_vectors():
                        pysam_bam_file_conn,
                        cleaved_readid_db_conn = None,
                        all_adapter_clipped = False,
-                       uniq_only = True):
+                       uniq_only = True,
+                       oneD_rate_mode = True,
+                       rate_cutoff = 15,
+                       cleav_rate_mode = False,
+                       stranded = True):
         
         reference, start, end, strand = ome_coords
         
@@ -53,7 +57,7 @@ class build_hitsclip_vectors():
         # relevant basewise data as it is gleaned from the alignment data
         raw_cover_cd = OmeDict()
         cleavage_cd = OmeDict()
-        oned_rate_cd = OmeDict()
+        oneD_cd = OmeDict()
         
         for d in fetched_alignments:
             
@@ -95,18 +99,18 @@ class build_hitsclip_vectors():
             if self.adapter_clipped_bool or all_adapter_clipped:
                 #add left cleavage site
                 left_terminus_st = SiteTuple(reference,
-                                           start = d['POS'],
-                                           end = d['POS'] + 1,
-                                           strand = d['strand'],
-                                           data = 1)
+                                             start = d['POS'],
+                                             end = d['POS'] + 1,
+                                             strand = d['strand'],
+                                             data = 1)
                 cleavage_cd.add_site_tuple( left_terminus_st )
                 
                 #add right cleavage site
                 right_terminus_st = SiteTuple(reference,
-                                            start = d['AEND'] - 1,
-                                            end = d['AEND'],
-                                            strand = d['strand'],
-                                            data = 1)
+                                              start = d['AEND'] - 1,
+                                              end = d['AEND'],
+                                              strand = d['strand'],
+                                              data = 1)
                 cleavage_cd.add_site_tuple( right_terminus_st )
             
             ####
@@ -128,20 +132,55 @@ class build_hitsclip_vectors():
                                                 end = d['AEND'],
                                                 strand = d['strand'],
                                                 data = 1)
-                            oned_rate_cd.add_site_tuple(oneD_st)
+                            oneD_cd.add_site_tuple(oneD_st)
                         else:
                             pass
         
-        # output the data vectors. note that the bottom strand entries are
-        # reversed by default, thereby orienting the top and bottom strands
-        # to have the same 5'->3' polarity.
-        vector_tuple = ( raw_cover_cd.get_data(ome_coords),
-                         cleavage_cd.get_data(ome_coords),
-                         oned_rate_cd.get_data(ome_coords) )
+        # output the data vectors. 
+        # note that the get_data method reverses the bottom strand vectors by 
+        # default (see orient_strands argument). Therefore the top and bottom 
+        # strand coverage vectors have the same 5'->3' polarity.
+        # also note that the stranded argument here can be toggled to accomodate
+        # strand-agnostic sequencing libraries. However HITS-CLIP libraries are
+        # typically stranded.
+        if stranded:
+            raw_cover_vec = raw_cover_cd.get_data(ome_coords)
+            self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
+            cleavage_vec = cleavage_cd.get_data(ome_coords)
+            self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
+            oneD_vec = oneD_cd.get_data(ome_coords)
+            self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
+        else:
+            raw_cover_vec = raw_cover_cd.get_data(ome_coords, both_strands = True)
+            self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
+            cleavage_vec = cleavage_cd.get_data(ome_coords, both_strands = True)
+            self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
+            oneD_vec = oneD_cd.get_data(ome_coords, both_strands = True)
+            self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
         
-        self.stat_dict['n_of_nt_covered'] = sum(vector_tuple[0])
-        self.stat_dict['n_of_nt_termini'] = sum(vector_tuple[1])
-        self.stat_dict['n_of_oneD_operations'] = sum(vector_tuple[2])
+        if oneD_rate_mode == True:
+            oneD_rate_vec = []
+            for x, y in zip(oneD_vec, raw_cover_vec):
+                if y < rate_cutoff:
+                    oneD_rate_vec.append(0)
+                else:
+                    oneD_rate_vec.append(x/y)
+            
+            oneD_vec = oneD_rate_vec
+        
+        if cleav_rate_mode == True:
+            cleav_rate_vec = []
+            for x, y in zip(cleavage_vec, raw_cov_vec):
+                if y < rate_cutoff:
+                    cleav_rate_vec.append(0)
+                else:
+                    cleav_rate_vec.append(x/y)
+            
+            cleavage_vec = cleav_rate_vec
+        
+        vector_tuple = ( raw_cover_vec,
+                         oneD_vec,
+                         cleavage_vec )
         
         return vector_tuple
 

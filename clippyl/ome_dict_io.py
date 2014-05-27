@@ -55,22 +55,38 @@ class OmeDict():
         
         return
     
-    def get_data(self, ome_coords, orient_strands = True):
+    def get_data(self, ome_coords, both_strands = False, orient_strands = True):
         """
         Retrieve the data corresponding to the given coordinates from 
         the OmeDict. A list of integers is returned (aka a coverage vector).
         The orient_strands argument caused the minus strand data lists to
         reverse such that the top and bottom strand vectors are oriented in the
-        same left to right (5'->3') polarity.
+        same left to right (5'->3') polarity. The both_strands argument here 
+        can be toggled to accomodate strand-agnostic sequencing libraries. 
+        However HITS-CLIP libraries are typically stranded.
         """
         reference, start, end, strand = ome_coords
         
-        data = []
-        for coord in range(start, end):
-            try:
-                data.append(self.d[strand][reference].get(coord, 0))
-            except KeyError:
-                data.append(0)
+        if both_strands:
+            t_strand_data = []
+            b_strand_data = []
+            for coord in range(start, end):
+                try:
+                    t_strand_data.append(self.d['+'][reference].get(coord, 0))
+                except KeyError:
+                    t_strand_data.append(0)
+                try:
+                    b_strand_data.append(self.d['-'][reference].get(coord, 0))
+                except KeyError:
+                    b_strand_data.append(0)
+            data = [sum(x) for x in zip(t_strand_data, b_strand_data)]
+        else:
+            data = []
+            for coord in range(start, end):
+                try:
+                    data.append(self.d[strand][reference].get(coord, 0))
+                except KeyError:
+                    data.append(0)
         
         if orient_strands and strand == '-':
             data.reverse()

@@ -2,7 +2,8 @@
 
 from clippyl.flatfile_parsing import (FastqReader,
                                       validate_fastq_file,
-                                      get_cluster_coords)
+                                      get_cluster_coords,
+                                      Bed6Reader)
 
 #TODO: adhere to docstring conventions docs:
 #http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html
@@ -139,16 +140,14 @@ class Bed6SQLite(SQLiteBase):
         
         self.c.execute('''CREATE TABLE bed6_intervals
                              (
-                                chrom TEXT, 
-                                chromStart INT, 
-                                chromEnd INT, 
+                                ref TEXT, 
+                                start INT, 
+                                end INT, 
                                 name TEXT, 
                                 score INT, 
                                 strand TEXT, 
-                                PRIMARY KEY(strand, chrom, chromStart, chromEnd)
+                                PRIMARY KEY(strand, ref, start, end)
                              )''')
-        
-        from clipPyL.flatfile_parsing import Bed6Reader
         
         stat_dict = {}
         stat_dict['n_of_intervals'] = 0 #total number of intervals
@@ -183,7 +182,7 @@ class Bed6SQLite(SQLiteBase):
         # q_ prefix denotes "query"
         q_ref, q_start, q_end, q_strand = query_coord
         
-        t = (q_strand, q_chrom, q_start, q_end, q_start, q_end)
+        t = (q_strand, q_ref, q_start, q_end, q_start, q_end)
         
         self.c.execute('''SELECT * FROM bed6_intervals
                             WHERE strand = ?

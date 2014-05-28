@@ -584,7 +584,7 @@ class Bed6Reader():
     http://genome.ucsc.edu/goldenPath/help/customTrack.html#TRACK
     """
     
-    def __init__(self, inBedFP):
+    def __init__(self, in_bed_fp):
         print("WARNING: REMOVE HEADER FROM BEDFILE BEFORE USING THIS CLASS!")
         print("WARNING: BEDFILE HEADER IS NOT PARSED")
         #TODO: Detect header by looking for word browser or track or # at 
@@ -593,10 +593,11 @@ class Bed6Reader():
         # http://bedtools.readthedocs.org/en/latest/content/overview.html#headers-are-allowed-in-gff-and-bed-files
         
         try:
-            self.fh = open(inBedFP, 'r')
+            self.fh = open(in_bed_fp, 'r')
             self.bedline = self.fh.readline()
         except IOError as ioerr:
-            print("{} not found".format(filepath))
+            print("{} not found".format(in_bed_fp))
+            #TODO: reraise the error so it quits
     
     def __enter__(self):
         return self
@@ -634,8 +635,8 @@ class Bed6Reader():
         specified by flank_size.
         """
         
-        graph_start = self.d['start'] - flankint
-        graph_end = self.d['end'] + flankint
+        graph_start = self.d['start'] - flank_size
+        graph_end = self.d['end'] + flank_size
         
         d = {'name' : self.d['name'],
              'ref' : self.d['ref'],
@@ -644,7 +645,7 @@ class Bed6Reader():
              'end' : self.d['end'],
              'graph_end' : graph_end,
              'strand' : self.d['strand'],
-                    }
+             'score' : self.d['score']}
         
         return d
 

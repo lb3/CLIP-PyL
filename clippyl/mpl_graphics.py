@@ -9,23 +9,20 @@ from matplotlib import ticker
 from matplotlib.backends.backend_pdf import PdfPages
 
 def hits_clip_plot(   bed_gen,
-                      bam_fh_l, label_l,
+                      bam_fh_l,
                       readid_db_fh_l = None,
+                      label_l = None,
                       norm_factor_l = None,
-                      ciselement_db_fh_l = ciselement_db_fh_l,
-                      ciselement_label_l = ciselement_label_l,
-                      motif_color_tup = None, #TODO: implement me
+                      ciselement_db_fh_l = None,
+                      ciselement_label_l = None,
+                      ciselement_color_l = None,
                       flank = 0, 
-                      yLabel = 'Y-Axis Label', 
-                      graphTitle = 'Title', 
-                      ##
                       all_adapter_clipped = False,
                       uniq_only = True,
                       oneD_rate_mode = True,
                       rate_cutoff = 15,
                       cleav_rate_mode = False,
-                      stranded = True)
-                   ):
+                      stranded = True):
     '''
     writeme
     '''
@@ -37,10 +34,21 @@ def hits_clip_plot(   bed_gen,
     # the flank argument expands the graph to include additional nts on 
     # each side
     print('Flank', flank) #debugging
-    bed_d = bed_gen.calc_graph_limits(self, flank_size = flank)
+    bed_d = bed_gen.calc_graph_limits(flank_size = flank)
     
     if not norm_factor_l:
         norm_factor_l = [None, ] * len(bam_fh_l)
+    
+    if not label_l:
+        label_l = ['no label', ] * len(bam_fh_l)
+    
+    if not readid_db_fh_l:
+        readid_db_fh_l = [None, ] * len(bam_fh_l)
+    
+    # these containers for max values will help determine y-axis length
+    cleav_max = 5
+    oneD_max = 5
+    raw_cover_max = 5
     
     for bam_fh, label, norm_factor, readid_db_fh in zip(bam_fh_l,
                                                         label_l,
@@ -59,8 +67,8 @@ def hits_clip_plot(   bed_gen,
         
         f = build_hitsclip_vectors()
         t = f( ome_coords,
-               bam_conn, 
-               cleaved_readid_db_conn = readid_db_fh )
+               bam_fh, 
+               cleaved_readid_db_conn = readid_db_fh,
                all_adapter_clipped = False,
                uniq_only = True,
                oneD_rate_mode = True,
@@ -69,7 +77,7 @@ def hits_clip_plot(   bed_gen,
                stranded = True)
         
         # recover the coverage vectors for the region defined by ome_coords
-        raw_cover_l, cleavage_l, oneD_rate_l = t
+        raw_cover_l, cleavage_l, oneD_l = t
         
         if norm_factor:
             raw_cover_l = [raw_cover/norm_factor for raw_cover in raw_cover_l]
@@ -91,134 +99,131 @@ def hits_clip_plot(   bed_gen,
         
         cleav_ax = plt.axes([0.085, 0.15, 0.9, 0.2])
         cleav_ax.plot(cleavage_l, label = label)
+        if max(cleavage_l, key = int) > cleav_max:
+            cleav_max = max(cleavage_l, key = int)
         
         oneD_ax = plt.axes([0.085, 0.35, 0.9, 0.2])
-        oneD_ax.plot(oneD_rate_l, label = label)
+        oneD_ax.plot(oneD_l, label = label)
+        if max(oneD_l, key = int) > oneD_max:
+            oneD_max = max(oneD_l, key = int)
         
         raw_ax = plt.axes([0.085, 0.55, 0.9, 0.2])
         raw_ax.plot(raw_cover_l, label = label)
+        if max(raw_cover_l, key = int) > raw_cover_max:
+            raw_cover_max = max(raw_cover_l, key = int)
+    
+    # delineate query region and flank region with vspan
+    q_region_ax = fig.add_axes([0.085, 0.08, 0.9, 0.02], sharex = raw_ax)
+    x_axis_len = bed_d['graph_end'] - bed_d['graph_start']
+    q_region_ax.axvspan(flank, x_axis_len-flank, facecolor='k', alpha=0.5)
+    plt.tick_params( axis='y',       # changes apply to the x-axis
+                     which='both',      # both major and minor ticks are affected
+                     #bottom='off',      # ticks along the bottom edge are off
+                     #top='off',         # ticks along the top edge are off
+                     left='off', 
+                     right='off', 
+                     #labelbottom='off', # labels along the bottom edge are off
+                     labelleft='off',
+                     labelright='off' )
+    
+    # configure x and y axis for the raw coverage plot
+    plt.sca(raw_ax)
+    plt.xlim( (0, x_axis_len) )
+    plt.ylim( (0, raw_cover_max) )
+    plt.ylabel( 'read coverage' )
+    plt.tick_params( axis='x',          # changes apply to the x-axis
+                     which='both',      # both major and minor ticks are affected
+                     #bottom='off',      # ticks along the bottom edge are off
+                     #top='off',         # ticks along the top edge are off
+                     labelbottom='off') # labels along the bottom edge are off
+    locs, labels = plt.yticks()
+    plt.yticks(locs[1:])
+    
+    # configure x and y axis for the oneD plot
+    plt.sca(oneD_ax)
+    plt.xlim( (0, x_axis_len) )
+    if oneD_rate_mode:
+        plt.ylim( (0, 1) )
+    else:
+        plt.ylim( (0, oneD_max) )
+    plt.ylabel( '1D rate' )
+    plt.tick_params( axis='x',          # changes apply to the x-axis
+                     which='both',      # both major and minor ticks are affected
+                     #bottom='off',      # ticks along the bottom edge are off
+                     #top='off',         # ticks along the top edge are off
+                     labelbottom='off') # labels along the bottom edge are off
+    locs, labels = plt.yticks()
+    plt.yticks(locs[1:-1])
+    
+    # configure x and y axis for the cleavage plot
+    plt.sca(cleav_ax)
+    plt.xlim( (0, x_axis_len) )
+    if cleav_rate_mode:
+        plt.ylim( (0, 1) )
+    else:
+        plt.ylim( (0, cleav_max) )
+    plt.ylabel( 'fragment termini' )
+    locs, labels = plt.yticks()
+    plt.yticks(locs[1:-1]) #remove max and min ticks so that they don't overlap with adjacent plots on the display
+    
+    # this will be an axis area to draw the legend and some
+    # text info about the gene model
+    legend_ax = plt.axes([0.085, 0.75, 0.9, 0.2], frameon=False)
+    handles, labels = raw_ax.get_legend_handles_labels()
+    ncol = math.ceil( len(labels) / 4 )
+    legend_ax.legend(handles, labels, ncol = ncol, loc=2, fontsize=12)
+    plt.tick_params( axis='both',       # changes apply to the x-axis
+                     which='both',      # both major and minor ticks are affected
+                     bottom='off',      # ticks along the bottom edge are off
+                     top='off',         # ticks along the top edge are off
+                     left='off', 
+                     right='off', 
+                     labelbottom='off', # labels along the bottom edge are off
+                     labelleft='off',
+                     labelright='off' )
+    
+    text_s = '\n'.join( ['Coordinates: ' + bed_d['ref'] + ':' \
+                                         + str(bed_d['start']) + '-' \
+                                         + str(bed_d['end']), 
+                         'Name: ' + bed_d['name'], 
+                         'Score: ' + str(bed_d['score']), 
+                         'Strand: ' + bed_d['strand']] )
+    
+    plt.text( 0.7, 0.7, text_s, 
+              horizontalalignment='center',
+              verticalalignment='center',
+              transform=legend_ax.transAxes, 
+              bbox=dict() )
+    
+    if not ciselement_color_l:
+        ciselement_color_l = ['g', ] * len(ciselement_db_fh_l)
+    
+    # check for motif intersect
+    for db_fh, label, color in zip(ciselement_db_fh_l, 
+                                   ciselement_label_l, 
+                                   ciselement_color_l):
         
-        # delineate query region and flank region with vspan
-        q_region_ax = fig.add_axes([0.085, 0.08, 0.9, 0.02], sharex = raw_ax)
-        x_axis_len = bed_d['graph_end'] - bed_d['graph_start']
-        q_region_ax.axvspan(flank, x_axis_len-flank, facecolor='k', alpha=0.5)
-        plt.tick_params( axis='y',       # changes apply to the x-axis
-                         which='both',      # both major and minor ticks are affected
-                         #bottom='off',      # ticks along the bottom edge are off
-                         #top='off',         # ticks along the top edge are off
-                         left='off', 
-                         right='off', 
-                         #labelbottom='off', # labels along the bottom edge are off
-                         labelleft='off',
-                         labelright='off' )
-        
-        #store max data value to use for explicit declaration of yAxis height downstream
-        if max(rawCovL) > rawMax: rawMax = max(rawCovL)
-                cleavage_max = 1
-                raw_cov_max = 0
-                if max(cleavage_l) > cleavMax: cleavMax = max(cleavage_l)
-                        oneD_max = 1
-                if max(oneD_rate_l) > : oneDmax = max(oneDcovL)
-        if yaxis_max < max(rawCovL, key=int): y_axis_max = max(rawCovL, key=int) + 1
-        
-        if y_axis_len:
-            
-        
-        plt.sca(raw_ax)
-        plt.xlim( (0, x_axis_len) )
-        plt.ylim( (0, max(raw_l, key=int)) )
-        plt.ylabel( 'read coverage' )
-        plt.tick_params( axis='x',          # changes apply to the x-axis
-                         which='both',      # both major and minor ticks are affected
-                         #bottom='off',      # ticks along the bottom edge are off
-                         #top='off',         # ticks along the top edge are off
-                         labelbottom='off') # labels along the bottom edge are off
-        locs, labels = plt.yticks()
-        plt.yticks(locs[1:])
-        
-        plt.sca(oneD_ax)
-        plt.xlim( (0, x_axis_len) )
-        if oneD_rate_mode:
-            plt.ylim( (0, 1) )
-        else:
-            plt.ylim( (0, max(oneD_l, key=int) )
-        plt.ylabel( '1D rate' )
-        plt.tick_params( axis='x',          # changes apply to the x-axis
-                         which='both',      # both major and minor ticks are affected
-                         #bottom='off',      # ticks along the bottom edge are off
-                         #top='off',         # ticks along the top edge are off
-                         labelbottom='off') # labels along the bottom edge are off
-        locs, labels = plt.yticks()
-        plt.yticks(locs[1:-1])
-        
-        plt.sca(cleav_ax)
-        plt.xlim( (0, x_axis_len) )
-        if cleav_rate_mode:
-            plt.ylim( (0, max(cleavage_l, key=int)) )
-        else:
-            plt.ylim( (0, max(cleavage_l, key=int)) )
-        plt.ylabel( 'fragment termini' )
-        locs, labels = plt.yticks()
-        plt.yticks(locs[1:-1]) #remove max and min ticks so that they don't overlap with adjacent plots on the display
-        
-        # this will be an axis area to draw the legend and some
-        # text info about the gene model
-        legend_ax = plt.axes([0.085, 0.75, 0.9, 0.2], frameon=False)
-        handles, labels = raw_ax.get_legend_handles_labels()
-        ncol = math.ceil( len(labels) / 4 )
-        legend_ax.legend(handles, labels, ncol = ncol, loc=2, fontsize=12)
-        plt.tick_params( axis='both',       # changes apply to the x-axis
-                         which='both',      # both major and minor ticks are affected
-                         bottom='off',      # ticks along the bottom edge are off
-                         top='off',         # ticks along the top edge are off
-                         left='off', 
-                         right='off', 
-                         labelbottom='off', # labels along the bottom edge are off
-                         labelleft='off',
-                         labelright='off' )
-        
-        text_s = '\n'.join( ['Coordinates: ' + bed_d['ref'] + ':' \
-                                             + str(bed_d['start']) + '-' \
-                                             + str(bed_d['end']), 
-                             'Name: ' + bed_d['name'], 
-                             'Score: ' + str(bed_d['score']), 
-                             'Strand: ' + bed_d['strand']] )
-        
-        plt.text( 0.7, 0.7, text_s, 
-                  horizontalalignment='center',
-                  verticalalignment='center',
-                  transform=legend_ax.transAxes, 
-                  bbox=dict() )
-        
-        if not ciselement_color_l:
-            ciselement_color_l = ['g', ] * len(ciselement_db_fh_l)
-        
-        # check for motif intersect
-        for db_fh, label, color in zip(ciselement_db_fh_l, 
-                                       ciselement_label_l, 
-                                       ciselement_color_l):
-            
-            l = db_fh.ome_coord_lookup( ome_coords )
-            if l:
-                print('cis-element intersection detected') #debugging
-                for ref, start, end, name, score, strand in l:
-                    ce_vspan_start = start - bed_d['graph_start']
-                    ce_vspan_end = end - bed_d['graph_start']
-                    if ce_vspan_start < 0:
-                        # the motif is only partially overlapping
-                        ce_vspan_start = 0
-                    if ce_vspan_end > x_axis_len:
-                        # the motif is only partially overlapping
-                        ce_vspan_end = x_axis_len
-                    
-                    #make sure everything is in the same orientation
-                    if bed_d['strand'] == '-':
-                        i = len(rawCovL) - ce_vspan_end
-                        j = len(rawCovL) - ce_vspan_start
-                    else:
-                        i = ce_vspan_start
-                        j = ce_vspan_end
-                    raw_ax.axvspan(i, j, alpha=0.25, facecolor = motif_color)
+        l = db_fh.ome_coord_lookup( ome_coords )
+        if l:
+            print('cis-element intersection detected') #debugging
+            for ref, start, end, name, score, strand in l:
+                ce_vspan_start = start - bed_d['graph_start']
+                ce_vspan_end = end - bed_d['graph_start']
+                if ce_vspan_start < 0:
+                    # the motif is only partially overlapping
+                    ce_vspan_start = 0
+                if ce_vspan_end > x_axis_len:
+                    # the motif is only partially overlapping
+                    ce_vspan_end = x_axis_len
+                
+                #make sure everything is in the same orientation
+                if bed_d['strand'] == '-':
+                    i = len(raw_cover_l) - ce_vspan_end
+                    j = len(raw_cover_l) - ce_vspan_start
+                else:
+                    i = ce_vspan_start
+                    j = ce_vspan_end
+                raw_ax.axvspan(i, j, alpha=0.25, facecolor = color)
     
     return fig
 

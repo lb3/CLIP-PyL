@@ -77,7 +77,7 @@ def hits_clip_plot(   bed_gen,
                stranded = True)
         
         # recover the coverage vectors for the region defined by ome_coords
-        raw_cover_l, cleavage_l, oneD_l = t
+        raw_cover_l, oneD_l, cleavage_l = t
         
         if norm_factor:
             raw_cover_l = [raw_cover/norm_factor for raw_cover in raw_cover_l]

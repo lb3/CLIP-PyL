@@ -317,111 +317,111 @@ class build_parclip_vectors():
                         else:
                             pass
 
-def detect_mm_variant(self, native_nt = 'T', variant_nt = 'C', 
-                            siteTup_mode = False, 
-                            nt_set = 'ATCGN'):
-    '''
-    you can check a specific nt variant.
-    the default mismatch that is detected is T to C.
-    returns a list of integers for each mismatch event.
-    the integers returned are the zero-based indices of the variant 
-    occurence along the string stored in SEQ field.
-    a list of zero-based chromosomal coordinates can be returned instead 
-    by setting siteTup_mode to True. the chromosomal coordinates will
-    be returned as a list of siteTups can be calculated.
-    '''
-    v = []
-    #NOTE: this read must be mapped. otherwise optdict will be empty.
-    sam_data_type, mismatch_str = self.d['OPTDICT']['MD']
-    if native_nt in mismatch_str:
-        m = self.MDZregexP.findall(mismatch_str)
-        sam_seq_pos = -1 # this is the zero-based index into the SEQ string
-        ref_pos = self.d['POS'] - 2 # this creates the zero-based index into the REF
-        for i in m:
-            if native_nt in i and '^' != i[0]:
-                for nt in i:
-                    sam_seq_pos += 1
-                    ref_pos += 1
-                    if nt == native_nt:
-                        if self.d['SEQ'][sam_seq_pos] == variant_nt:
-                            #print('found one', self.d['QNAME']) #debugging
-                            if siteTup_mode:
-                                v.append( (self.d['RNAME'], ref_pos, ref_pos + 1, self.gleanStrand()) )
-                            else:
-                                v.append( (sam_seq_pos, ref_pos) )
-                        else:
-                            continue
-                    else:
-                        continue
+#def detect_mm_variant(self, native_nt = 'T', variant_nt = 'C', 
+                            #siteTup_mode = False, 
+                            #nt_set = 'ATCGN'):
+    #'''
+    #you can check a specific nt variant.
+    #the default mismatch that is detected is T to C.
+    #returns a list of integers for each mismatch event.
+    #the integers returned are the zero-based indices of the variant 
+    #occurence along the string stored in SEQ field.
+    #a list of zero-based chromosomal coordinates can be returned instead 
+    #by setting siteTup_mode to True. the chromosomal coordinates will
+    #be returned as a list of siteTups can be calculated.
+    #'''
+    #v = []
+    ##NOTE: this read must be mapped. otherwise optdict will be empty.
+    #sam_data_type, mismatch_str = self.d['OPTDICT']['MD']
+    #if native_nt in mismatch_str:
+        #m = self.MDZregexP.findall(mismatch_str)
+        #sam_seq_pos = -1 # this is the zero-based index into the SEQ string
+        #ref_pos = self.d['POS'] - 2 # this creates the zero-based index into the REF
+        #for i in m:
+            #if native_nt in i and '^' != i[0]:
+                #for nt in i:
+                    #sam_seq_pos += 1
+                    #ref_pos += 1
+                    #if nt == native_nt:
+                        #if self.d['SEQ'][sam_seq_pos] == variant_nt:
+                            ##print('found one', self.d['QNAME']) #debugging
+                            #if siteTup_mode:
+                                #v.append( (self.d['RNAME'], ref_pos, ref_pos + 1, self.gleanStrand()) )
+                            #else:
+                                #v.append( (sam_seq_pos, ref_pos) )
+                        #else:
+                            #continue
+                    #else:
+                        #continue
             
-            elif '^' == i[0]:
-                ref_pos -= len(i[1:])
-                continue
+            #elif '^' == i[0]:
+                #ref_pos -= len(i[1:])
+                #continue
             
-            elif i in nt_set:
-                sam_seq_pos += len(i)
-                ref_pos += len(i)
-                continue
+            #elif i in nt_set:
+                #sam_seq_pos += len(i)
+                #ref_pos += len(i)
+                #continue
             
-            elif re.match('[0-9]+', i):
-                sam_seq_pos += int(i)
-                ref_pos += int(i)
-                continue
+            #elif re.match('[0-9]+', i):
+                #sam_seq_pos += int(i)
+                #ref_pos += int(i)
+                #continue
             
-            else:
-                print('something went wrong.')
-                raise IOError
+            #else:
+                #print('something went wrong.')
+                #raise IOError
     
-    return v
+    #return v
 
 
-        # output the data vectors. 
-        # note that the get_data method reverses the bottom strand vectors by 
-        # default (see orient_strands argument). Therefore the top and bottom 
-        # strand coverage vectors have the same 5'->3' polarity.
-        # also note that the stranded argument here can be toggled to accomodate
-        # strand-agnostic sequencing libraries. However HITS-CLIP libraries are
-        # typically stranded.
-        if stranded:
-            raw_cover_vec = raw_cover_cd.get_data(ome_coords)
-            self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
-            cleavage_vec = cleavage_cd.get_data(ome_coords)
-            self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
-            oneD_vec = oneD_cd.get_data(ome_coords)
-            self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
-        else:
-            raw_cover_vec = raw_cover_cd.get_data(ome_coords, both_strands = True)
-            self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
-            cleavage_vec = cleavage_cd.get_data(ome_coords, both_strands = True)
-            self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
-            oneD_vec = oneD_cd.get_data(ome_coords, both_strands = True)
-            self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
+        ## output the data vectors. 
+        ## note that the get_data method reverses the bottom strand vectors by 
+        ## default (see orient_strands argument). Therefore the top and bottom 
+        ## strand coverage vectors have the same 5'->3' polarity.
+        ## also note that the stranded argument here can be toggled to accomodate
+        ## strand-agnostic sequencing libraries. However HITS-CLIP libraries are
+        ## typically stranded.
+        #if stranded:
+            #raw_cover_vec = raw_cover_cd.get_data(ome_coords)
+            #self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
+            #cleavage_vec = cleavage_cd.get_data(ome_coords)
+            #self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
+            #oneD_vec = oneD_cd.get_data(ome_coords)
+            #self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
+        #else:
+            #raw_cover_vec = raw_cover_cd.get_data(ome_coords, both_strands = True)
+            #self.stat_dict['n_of_nt_covered'] = sum(raw_cover_vec)
+            #cleavage_vec = cleavage_cd.get_data(ome_coords, both_strands = True)
+            #self.stat_dict['n_of_nt_termini'] = sum(cleavage_vec)
+            #oneD_vec = oneD_cd.get_data(ome_coords, both_strands = True)
+            #self.stat_dict['n_of_oneD_operations'] = sum(oneD_vec)
         
-        if oneD_rate_mode == True:
-            oneD_rate_vec = []
-            for x, y in zip(oneD_vec, raw_cover_vec):
-                if y < rate_cutoff:
-                    oneD_rate_vec.append(0)
-                else:
-                    oneD_rate_vec.append(x/y)
+        #if oneD_rate_mode == True:
+            #oneD_rate_vec = []
+            #for x, y in zip(oneD_vec, raw_cover_vec):
+                #if y < rate_cutoff:
+                    #oneD_rate_vec.append(0)
+                #else:
+                    #oneD_rate_vec.append(x/y)
             
-            oneD_vec = oneD_rate_vec
+            #oneD_vec = oneD_rate_vec
         
-        if cleav_rate_mode == True:
-            cleav_rate_vec = []
-            for x, y in zip(cleavage_vec, raw_cov_vec):
-                if y < rate_cutoff:
-                    cleav_rate_vec.append(0)
-                else:
-                    cleav_rate_vec.append(x/y)
+        #if cleav_rate_mode == True:
+            #cleav_rate_vec = []
+            #for x, y in zip(cleavage_vec, raw_cov_vec):
+                #if y < rate_cutoff:
+                    #cleav_rate_vec.append(0)
+                #else:
+                    #cleav_rate_vec.append(x/y)
             
-            cleavage_vec = cleav_rate_vec
+            #cleavage_vec = cleav_rate_vec
         
-        vector_tuple = ( raw_cover_vec,
-                         oneD_vec,
-                         cleavage_vec )
+        #vector_tuple = ( raw_cover_vec,
+                         #oneD_vec,
+                         #cleavage_vec )
         
-        return vector_tuple
+        #return vector_tuple
 
 ##TESTING
 ##http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg19&position=chr11%3A118964585-118966177&hgsid=369409831_ZPHI1ErsOPVE9y4sB1fWqubbTvzV

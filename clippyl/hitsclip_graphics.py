@@ -4,16 +4,30 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from clippyl.flatfile_parsing import Bed6Reader
-from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
-from clippyl.vector_factory import build_hitsclip_vectors
-from clippyl.mpl_graphics import hits_clip_plot
+from .flatfile_parsing import Bed6Reader
+from .sqlite_io import ReadidSQLite, Bed6SQLite
+from .vector_factory import build_hitsclip_vectors
+from .mpl_graphics import hits_clip_plot
+
+def hitsclip_graphics_cli(args):
+    print(args.bam_files,
+          args.cleav_files,
+          args.query,
+          args.ciselements,
+          args.output)
+    
+    hitsclip_graphics(args.bam_files,
+                      args.cleav_files,
+                      args.query,
+                      args.ciselements,
+                      args.output)
+    return
 
 def hitsclip_graphics(  bam_fp_l,
                         readid_db_fp_l,
                         query_bed_fp,
                         ciselement_bed_fp_l,
-                        out_pdf_fp):
+                        out_pdf_fp ):
     '''Batch graphics routine for hitsclip data'''
     
     # parse data labels from input bam file names
@@ -47,6 +61,8 @@ def hitsclip_graphics(  bam_fp_l,
         if fp.split('.')[-1] == 'sl3':
             ciselement_db_fh_l.append(Bed6SQLite(fp))
         else:
+            print('building ciselement db')
+            print(fp)
             fh = Bed6SQLite(fp + '.sl3')
             fh.input_bed6(fp)
             ciselement_db_fh_l.append(fh)

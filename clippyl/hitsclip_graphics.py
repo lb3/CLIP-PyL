@@ -6,7 +6,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from .flatfile_parsing import Bed6Reader
 from .sqlite_io import ReadidSQLite, Bed6SQLite
-from .vector_factory import build_hitsclip_vectors
 from .mpl_graphics import hits_clip_plot
 
 def hitsclip_graphics_cli(args):

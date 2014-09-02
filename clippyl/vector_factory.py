@@ -350,7 +350,7 @@ class hitsclip_vectors_2_bg():
                 
                 n = cleavage_cd.dump2bg( bg_fh_top_strand_term, 
                                          bg_fh_bot_strand_term, 
-                                         ome_coords, 
+                                         ome_coords, # current boundary coords
                                          rate_mode = cleav_rate_mode, 
                                          rate_cutoff = cleav_rate_cutoff,
                                          rate_denom_cd = raw_cover_cd,
@@ -360,7 +360,7 @@ class hitsclip_vectors_2_bg():
                 
                 n = oneD_cd.dump2bg( bg_fh_top_strand_1D, 
                                      bg_fh_bot_strand_1D, 
-                                     ome_coords, 
+                                     ome_coords, # current boundary coords
                                      rate_mode = oneD_rate_mode, 
                                      rate_cutoff = oneD_rate_cutoff,
                                      rate_denom_cd = raw_cover_cd,
@@ -373,7 +373,7 @@ class hitsclip_vectors_2_bg():
                 # cleavage and oneD
                 n = raw_cover_cd.dump2bg( bg_fh_top_strand_cov, 
                                           bg_fh_bot_strand_cov, 
-                                          ome_coords, 
+                                          ome_coords, # current boundary coords
                                           purge_memory = True,
                                         )
                 self.stat_dict['n_of_nt_covered'] += n

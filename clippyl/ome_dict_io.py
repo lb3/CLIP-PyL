@@ -101,37 +101,108 @@ class OmeDict():
     #TODO: build me purge memory in a single operation by reinitiating the 
     #      ome_dict at self and writing the data from beyong the boundary coords
     
-    #TODO: use get_data??
+    #TODO: compare to get_data
     #NOTE: called by .vector_factory.hitsclip_vectors_2_bg
     def dump2bg(self, bg_fh_top_strand_1D, 
                       bg_fh_bot_strand_1D, 
-                      ome_coords, 
+                      boundary_ome_coords, 
                       rate_mode = False, 
                       rate_cutoff = None, 
                       rate_denom_cd = None, # ome dict containing rate denominator is typically raw coverage
                       purge_memory = True ):
         
-        sum(raw_cover_vec) #TODO: return n_of_nt_covered
+        # the function will return these coverage stats
+        n_of_nt_covered = 0
+        n_of_sequenced_bases = 0
         
-        # write top strand
+        b_ref, b_start, b_end, b_strand = boundary_ome_coords
+        assert type(b_ref) == str
+        assert type(b_start) == int
+        b_coord = b_start # the boundary is the start coord
+        
+        # note: I used nested functions for writing. This allowed me to use 
+        # return to break out of the nested loop
+        # http://stackoverflow.com/a/189685
+        # https://mail.python.org/pipermail/python-3000/2007-July/008663.html
+        def write_top_strand(b_ref, b_coord):
+            # write top strand until the boundary coords are encountered
             for ref in self.d['+']:
-                coord, datum = self.d['+'][ref].items()[0]
-                while coord, datum in self.d['+'][ref].items()[1:]:
+                # get the first coord value for this reference
+                coord, datum = self.d['+'][ref][0]
+                coord = int(coord)
+                # check that we are not beyond the boundary
+                if b_ref == ref and b_coord <= coord:
+                    return
+                else:
+                    # instantiate objects to hold values for write out to bedgraph
+                    ref_writeout = ref
+                    start_coord_writeout = coord
+                    end_coord_writeout = coord + 1
+                    datum_writeout = datum
                     
-                    datum = self.d['+'][ref][coord]
-                    curr_site_tup = (ref, coord, datum)
-                    if coord ==
-                    if r == boundary_ref and c > boundary_coord:
-                       
-                        return
-                    else:
-                        bg_fh.write('\t'.join() + '\n')
+                    n_of_nt_covered += 1
+                    n_of_sequenced_bases += datum
+                    
+                    # store the previous values to allow sequential coords that
+                    # hold the same value to be written on a single line (as a 
+                    # range) in the bedgraph format
+                    prev_coord = coord
+                    prev_datum = datum
+                    #TODO:check iterator is correct (will while loop over items? or should I use my own counter object?)
+                    while coord, datum in self.d['+'][ref].items()[1:]:
+                        #TODO: insert del key statements where appropriate
+                        coord = int(coord)
+                        if b_ref == coord and b_coord <= coord:
+                            # past boundary, write current values and exit
+                            bg_fh.write('\t'.join(ref_writeout = ref,
+                                                  start_coord_writeout,
+                                                  end_coord_writeout,
+                                                  datum_writeout) + '\n')
+                            return n_of_sequenced_bases, n_of_nt_covered
+                        elif coord == prev_coord + 1 and datum == d:
+                            # combine sequential equivalent bases for writeout 
+                            # as a range in the bedgraph format
+                            end_coord_writeout = coord + 1
+                            datum writeout += datum
+                            prev_coord = coord
+                            
+                            n_of_nt_covered += 1
+                            n_of_sequenced_bases += datum
+                        else:
+                            
+                            #TODO:delete key
+                            bg_fh.write('\t'.join(ref_writeout = ref,
+                                                  start_coord_writeout,
+                                                  end_coord_writeout,
+                                                  datum_writeout) + '\n')
+                            
+                            # instantiate objects to hold values for write out to bedgraph
+                            ref_writeout = ref
+                            start_coord_writeout = coord
+                            end_coord_writeout = coord + 1
+                            datum_writeout = datum
+                            
+                            n_of_nt_covered += 1
+                            n_of_sequenced_bases += datum
+                            
+                            # store the previous values to allow sequential coords that
+                            # hold the same value to be written on a single line (as a 
+                            # range) in the bedgraph format
+                            prev_coord = coord
+                            prev_datum = datum
+                    
+                    # final writout for this reference
+                    bg_fh.write('\t'.join(ref_writeout = ref,
+                                          start_coord_writeout,
+                                          end_coord_writeout,
+                                          datum_writeout) + '\n')
         
-        # write bottom strand
-            for r in self.d['-']:
-                for c in self.d['-'][r]:
-                   if r == boundary_ref and c == boundary_coord:
-                       return
+        #TODO: write bottom strand
+
+
+
+
+
         
         reference, start, end, strand, data = site_tuple
             

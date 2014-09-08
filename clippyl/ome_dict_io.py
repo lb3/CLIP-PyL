@@ -98,17 +98,18 @@ class OmeDict():
         
         return data
     
-    #TODO: build me purge memory in a single operation by reinitiating the 
+    #TODO: build me 
+    #      purge memory in a single operation by reinitiating the 
     #      ome_dict at self and writing the data from beyong the boundary coords
     
     #TODO: compare to get_data
     #NOTE: called by .vector_factory.hitsclip_vectors_2_bg
-    def dump2bg(self, bg_fh_top_strand_1D, 
-                      bg_fh_bot_strand_1D, 
+    def dump2bg(self, bg_fh_top_strand, 
+                      bg_fh_bot_strand, 
                       boundary_ome_coords, 
-                      rate_mode = False, 
-                      rate_cutoff = None, 
-                      rate_denom_cd = None, # ome dict containing rate denominator is typically raw coverage
+                      rate_mode = False, # use rate mode for normalization
+                      rate_cutoff = None, # minimum number of sequenced bases required to calculate a coverage rate
+                      rate_denom_od = None, # ome dict containing rate denominator (the numerator is the ome_dict)
                       purge_memory = True ):
         
         # the function will return these coverage stats
@@ -130,11 +131,13 @@ class OmeDict():
                 # get the first coord value for this reference
                 coord, datum = self.d['+'][ref][0]
                 coord = int(coord)
-                # check that we are not beyond the boundary
+                # initial check that we are not beyond the boundary
                 if b_ref == ref and b_coord <= coord:
                     return
                 else:
-                    # instantiate objects to hold values for write out to bedgraph
+                    # begin dumping bases in this reference...
+                    # first instantiate objects to hold values for 
+                    # write out to bedgraph
                     ref_writeout = ref
                     start_coord_writeout = coord
                     end_coord_writeout = coord + 1
@@ -145,25 +148,26 @@ class OmeDict():
                     
                     # store the previous values to allow sequential coords that
                     # hold the same value to be written on a single line (as a 
-                    # range) in the bedgraph format
+                    # range) in accordance with the bedgraph format
                     prev_coord = coord
                     prev_datum = datum
-                    #TODO:check iterator is correct (will while loop over items? or should I use my own counter object?)
-                    while coord, datum in self.d['+'][ref].items()[1:]:
+                    #TODO: check iterator is correct (will while loop over 
+                    #      items? or should I use my own counter object?)
+                    for coord, datum in self.d['+'][ref].items()[1:]:
                         #TODO: insert del key statements where appropriate
                         coord = int(coord)
-                        if b_ref == coord and b_coord <= coord:
+                        if b_ref == ref and b_coord <= coord:
                             # past boundary, write current values and exit
                             bg_fh.write('\t'.join(ref_writeout = ref,
-                                                  start_coord_writeout,
-                                                  end_coord_writeout,
-                                                  datum_writeout) + '\n')
+                                                  str(start_coord_writeout),
+                                                  str(end_coord_writeout),
+                                                  str(datum_writeout)) + '\n')
                             return n_of_sequenced_bases, n_of_nt_covered
+                            
                         elif coord == prev_coord + 1 and datum == d:
                             # combine sequential equivalent bases for writeout 
                             # as a range in the bedgraph format
                             end_coord_writeout = coord + 1
-                            datum writeout += datum
                             prev_coord = coord
                             
                             n_of_nt_covered += 1

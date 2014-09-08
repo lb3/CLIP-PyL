@@ -64,6 +64,7 @@ class build_hitsclip_vectors():
                 pass
             else:
                 continue
+            
             self.stat_dict['n_of_strand_matched_reads'] += 1
             
             #identify uniquely aligned reads by accessing the sam optdict
@@ -230,12 +231,12 @@ class hitsclip_vectors_2_bg():
         generic_head = 'track type=bedGraph name="{0}" description="{1}{2}" visibility=full\n'
         bg_fh_top_strand_cov.write(generic_head.format('5\'--> coverage', sample_name, 'Top strand coverage'))
         bg_fh_bot_strand_cov.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand coverage'))
-        bg_fh_top_strand_term.write(generic_head.format('5\'--> termini', sample_name, 'Top strand coverage'))
-        bg_fh_bot_strand_term.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand coverage'))
-        bg_fh_strand_1D.write(generic_head.format('5\'--> coverage', sample_name, 'Top strand coverage'))
-        bg_fh_strand_1D.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand coverage'))
+        bg_fh_top_strand_term.write(generic_head.format('5\'--> termini', sample_name, 'Top strand termini'))
+        bg_fh_bot_strand_term.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand termini'))
+        bg_fh_strand_1D.write(generic_head.format('5\'--> coverage', sample_name, 'Top strand single nucleotide deletions'))
+        bg_fh_strand_1D.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom single nucleotide deletions'))
         
-        i = pysam_bam_file_conn.fetch( )
+        i = pysam_bam_file_conn.fetch()
         
         # instantiate OmeDict, which will aggregate and then output the
         # relevant basewise data as it is gleaned from the alignment data
@@ -243,7 +244,7 @@ class hitsclip_vectors_2_bg():
         cleavage_cd = OmeDict()
         oneD_cd = OmeDict()
         
-        chunk_size = 0 # an object to manage memory
+        chunk_size = 0 # an object to manage memory tracks with n_of_nt_covered
         
         for i in fetched_alignments:
             

@@ -251,7 +251,9 @@ class hitsclip_vectors_2_bg():
             self.stat_dict['n_of_mapped_reads'] += 1
             
             d = {}
-            d['QNAME'] = alignment.qname
+            #TODO: verify that zero-based coord is returned
+            d['QNAME'] = alignment.qname # read ID
+            d['RNAME'] =  alignment.rname # reference
             d['POS'] = alignment.pos
             d['AEND'] = alignment.aend
             d['CIGAR'] = alignment.cigar
@@ -272,7 +274,7 @@ class hitsclip_vectors_2_bg():
             
             ####
             #store basewise raw coverage data in OmeDict
-            raw_cover_st = SiteTuple(reference,
+            raw_cover_st = SiteTuple(reference = d['RNAME'],
                                      start = d['POS'],
                                      end = d['AEND'],
                                      strand = d['strand'],
@@ -296,7 +298,7 @@ class hitsclip_vectors_2_bg():
             if self.adapter_clipped_bool or all_adapter_clipped:
                 
                 #add left cleavage site
-                left_terminus_st = SiteTuple(reference,
+                left_terminus_st = SiteTuple(reference = d['RNAME'],
                                              start = d['POS'],
                                              end = d['POS'] + 1,
                                              strand = d['strand'],
@@ -304,7 +306,7 @@ class hitsclip_vectors_2_bg():
                 n = cleavage_cd.add_site_tuple( left_terminus_st )
                 
                 #add right cleavage site
-                right_terminus_st = SiteTuple(reference,
+                right_terminus_st = SiteTuple(reference = d['RNAME'],
                                               start = d['AEND'] - 1,
                                               end = d['AEND'],
                                               strand = d['strand'],
@@ -348,36 +350,82 @@ class hitsclip_vectors_2_bg():
                 # NOTE: the coordinates of the current alignment comprises
                 # the boundary coords. Eveerything upstream will be dumped
                 # to file and deleted from memory.
+                b_ref = d['RNAME'] # current ref is the boundary ref
+                b_coord = d['POS'] # the boundary is the start coord
                 
-                n = cleavage_cd.dump2bg( bg_fh_top_strand_term, 
+                t = cleavage_cd.dump2bg( bg_fh_top_strand_term, 
                                          bg_fh_bot_strand_term, 
-                                         ome_coords, # current boundary coords
+                                         b_ref, # current boundary ref
+                                         b_coord, # current boundary coord
                                          rate_mode = cleav_rate_mode, 
                                          rate_cutoff = cleav_rate_cutoff,
                                          rate_denom_cd = raw_cover_cd,
-                                         purge_memory = True,
                                         )
-                self.stat_dict['n_of_nt_termini'] += n
+                #self.stat_dict['n_of_nt_termini'] += n
                 
-                n = oneD_cd.dump2bg( bg_fh_top_strand_1D, 
+                t = oneD_cd.dump2bg( bg_fh_top_strand_1D, 
                                      bg_fh_bot_strand_1D, 
-                                     ome_coords, # current boundary coords
+                                     b_ref, # current boundary ref
+                                     b_coord, # current boundary coord
                                      rate_mode = oneD_rate_mode, 
                                      rate_cutoff = oneD_rate_cutoff,
                                      rate_denom_cd = raw_cover_cd,
-                                     purge_memory = True,
                                     )
-                self.stat_dict['n_of_oneD_operations'] += n
+                #self.stat_dict['n_of_oneD_operations'] += n
                 
                 # The raw coverage ome_dict must be dumped last because it 
                 # serves as the denominator for the rate calculations for 
                 # cleavage and oneD
-                n = raw_cover_cd.dump2bg( bg_fh_top_strand_cov, 
+                t = raw_cover_cd.dump2bg( bg_fh_top_strand_cov, 
                                           bg_fh_bot_strand_cov, 
-                                          ome_coords, # current boundary coords
-                                          purge_memory = True,
+                                          b_ref, # current boundary ref
+                                          b_coord, # current boundary coord
                                         )
-                self.stat_dict['n_of_nt_covered'] += n
+                #self.stat_dict['n_of_nt_covered'] += n
+                
+                chunk_size = 0
+                print('{0} nucleotides with coverage'.format(str(self.stat_dict['n_of_nt_covered'])))
+                #TODO: fixme
+                print('{0} sequenced bases'.format(str(self.stat_dict['n_of_nt_covered'])))
+        
+        #TODO: perform final dump
+        b_ref = d['RNAME'] # current ref is the boundary ref
+        b_coord = d['AEND'] # the final boundary is the end coord
+        
+        t = cleavage_cd.dump2bg( bg_fh_top_strand_term, 
+                                 bg_fh_bot_strand_term, 
+                                 b_ref, # current boundary ref
+                                 b_coord, # current boundary coord
+                                 rate_mode = cleav_rate_mode, 
+                                 rate_cutoff = cleav_rate_cutoff,
+                                 rate_denom_cd = raw_cover_cd,
+                                )
+        #self.stat_dict['n_of_nt_termini'] += n
+        
+        t = oneD_cd.dump2bg( bg_fh_top_strand_1D, 
+                             bg_fh_bot_strand_1D, 
+                             b_ref, # current boundary ref
+                             b_coord, # current boundary coord
+                             rate_mode = oneD_rate_mode, 
+                             rate_cutoff = oneD_rate_cutoff,
+                             rate_denom_cd = raw_cover_cd,
+                            )
+        #self.stat_dict['n_of_oneD_operations'] += n
+        
+        # The raw coverage ome_dict must be dumped last because it 
+        # serves as the denominator for the rate calculations for 
+        # cleavage and oneD
+        t = raw_cover_cd.dump2bg( bg_fh_top_strand_cov, 
+                                  bg_fh_bot_strand_cov, 
+                                  b_ref, # current boundary ref
+                                  b_coord, # current boundary coord
+                                )
+        #self.stat_dict['n_of_nt_covered'] += n
+        
+        chunk_size = 0
+        print('{0} nucleotides with coverage'.format(str(self.stat_dict['n_of_nt_covered'])))
+        #TODO: fixme
+        print('{0} sequenced bases'.format(str(self.stat_dict['n_of_nt_covered'])))
         
         return
 

@@ -26,7 +26,8 @@ class OmeDict():
     Also, note that an OrderedDict is used to store the references as well as
     the coordinate keys for each reference. This makes retrieving data from the
     OmeDict more convinient; key input order is preserved, which obviates the
-    need to sort downstream.
+    need to sort downstream. WARNING: This function is appropriate when the 
+    input is pre-sorted (e.g. sam and bed files).
     """
     
     def __init__(self):
@@ -98,41 +99,44 @@ class OmeDict():
         
         return data
     
-    #TODO: build me 
-    #      purge memory in a single operation by reinitiating the 
-    #      ome_dict at self and writing the data from beyong the boundary coords
-    
-    #TODO: compare to get_data
-    #NOTE: called by .vector_factory.hitsclip_vectors_2_bg
+    #TODO: improve efficiency by deleting dict in single operation
     def dump2bg(self, bg_fh_top_strand, 
                       bg_fh_bot_strand, 
-                      boundary_ome_coords, 
+                      b_ref, 
+                      b_coord, 
                       rate_mode = False, # use rate mode for normalization
-                      rate_cutoff = None, # minimum number of sequenced bases required to calculate a coverage rate
-                      rate_denom_od = None, # ome dict containing rate denominator (the numerator is the ome_dict)
-                      purge_memory = True ):
+                      rate_cutoff = 0, # minimum number of sequenced bases required to calculate a coverage rate
+                      rate_denom_od = {}, # ome dict containing rate denominator (the numerator is the ome_dict)
+                      ):
         
         # the function will return these coverage stats
         n_of_nt_covered = 0
         n_of_sequenced_bases = 0
         
-        b_ref, b_start, b_end, b_strand = boundary_ome_coords
-        assert type(b_ref) == str
-        assert type(b_start) == int
-        b_coord = b_start # the boundary is the start coord
-        
         # note: I used nested functions for writing. This allowed me to use 
         # return to break out of the nested loop
         # http://stackoverflow.com/a/189685
         # https://mail.python.org/pipermail/python-3000/2007-July/008663.html
-        def write_top_strand(b_ref, b_coord):
+        def write_strand(b_ref, b_coord, strand, bg_fh):
             # write top strand until the boundary coords are encountered
-            for ref in self.d['+']:
+            # note that dictionary iteration methods have distinct semantics
+            # previous python versions
+            # http://stackoverflow.com/a/6777632/892030
+            # http://legacy.python.org/dev/peps/pep-0469/
+            
+            for ref in list(self.d[strand].keys()):
+                
+                coord_l = list(self.d[strand][ref])
+                
                 # get the first coord value for this reference
-                coord, datum = self.d['+'][ref][0]
-                coord = int(coord)
+                i = 0
+                coord = coord_l[i]
+                datum = self.d[strand][ref][coord_l[i]]
+                assert type(coord) == int
+                assert type(datum) == int
                 # initial check that we are not beyond the boundary
                 if b_ref == ref and b_coord <= coord:
+                    # we are beyond the boundary, exit
                     return
                 else:
                     # begin dumping bases in this reference...
@@ -141,134 +145,122 @@ class OmeDict():
                     ref_writeout = ref
                     start_coord_writeout = coord
                     end_coord_writeout = coord + 1
-                    datum_writeout = datum
-                    
                     n_of_nt_covered += 1
                     n_of_sequenced_bases += datum
                     
-                    # store the previous values to allow sequential coords that
-                    # hold the same value to be written on a single line (as a 
-                    # range) in accordance with the bedgraph format
-                    prev_coord = coord
-                    prev_datum = datum
-                    #TODO: check iterator is correct (will while loop over 
-                    #      items? or should I use my own counter object?)
-                    for coord, datum in self.d['+'][ref].items()[1:]:
-                        #TODO: insert del key statements where appropriate
-                        coord = int(coord)
-                        if b_ref == ref and b_coord <= coord:
-                            # past boundary, write current values and exit
-                            bg_fh.write('\t'.join(ref_writeout = ref,
-                                                  str(start_coord_writeout),
-                                                  str(end_coord_writeout),
-                                                  str(datum_writeout)) + '\n')
-                            return n_of_sequenced_bases, n_of_nt_covered
-                            
-                        elif coord == prev_coord + 1 and datum == d:
-                            # combine sequential equivalent bases for writeout 
-                            # as a range in the bedgraph format
-                            end_coord_writeout = coord + 1
-                            prev_coord = coord
-                            
-                            n_of_nt_covered += 1
-                            n_of_sequenced_bases += datum
+                    if rate_mode:
+                        # with rate_cutoff nothing will be written if there are
+                        # not enough sequenced bases in the denominator
+                        # otherwise, it is assumed that there are enough 
+                        # observations to calculate a rate
+                        if rate_denom_od[strand][ref][coord] < rate_cutoff
+                            datum_writeout = None
                         else:
-                            
-                            #TODO:delete key
-                            bg_fh.write('\t'.join(ref_writeout = ref,
-                                                  start_coord_writeout,
-                                                  end_coord_writeout,
-                                                  datum_writeout) + '\n')
-                            
-                            # instantiate objects to hold values for write out to bedgraph
-                            ref_writeout = ref
-                            start_coord_writeout = coord
-                            end_coord_writeout = coord + 1
-                            datum_writeout = datum
-                            
-                            n_of_nt_covered += 1
-                            n_of_sequenced_bases += datum
-                            
+                            datum_writeout = datum/rate_denom_od[strand][ref][coord]
                             # store the previous values to allow sequential coords that
                             # hold the same value to be written on a single line (as a 
-                            # range) in the bedgraph format
+                            # range) in accordance with the bedgraph format
                             prev_coord = coord
-                            prev_datum = datum
+                            prev_datum = datum/rate_denom_od[strand][ref][coord]
+                    else:
+                        datum_writeout = datum
+                        # store the previous values to allow sequential coords that
+                        # hold the same value to be written on a single line (as a 
+                        # range) in accordance with the bedgraph format
+                        prev_coord = coord
+                        prev_datum = datum
+                    
+                    # purge from memory
+                    del self.d[strand][ref][coord]
+                    
+                    if len(coord_l) > 1:
+                        for coord in coord_l[1:]:
+                            if b_ref == ref and b_coord <= coord:
+                                # past boundary, write current values to file
+                                # and exit func
+                                if datum_writeout != None:
+                                    bg_fh.write('\t'.join(ref_writeout,
+                                                          str(start_coord_writeout),
+                                                          str(end_coord_writeout),
+                                                          '{:f}'.format(datum_writeout)) + '\n')
+                                    return n_of_sequenced_bases, n_of_nt_covered
+                                else:
+                                    return n_of_sequenced_bases, n_of_nt_covered
+                            else:
+                                pass
+                            
+                            datum = self.d[strand][ref][coord]
+                            del self.d[strand][ref][coord]
+                            n_of_nt_covered += 1
+                            n_of_sequenced_bases += datum
+                            
+                            if rate_mode:
+                                # with rate_cutoff nothing will be written if there are
+                                # not enough sequenced bases in the denominator
+                                # otherwise, it is assumed that there are enough 
+                                # observations to calculate a rate
+                                if rate_denom_od[strand][ref][coord] < rate_cutoff
+                                    datum = None
+                                else:
+                                    datum = datum/rate_denom_od[strand][ref][coord]
+                            else:
+                                pass
+                            
+                            # convert to string representation to avoid floating
+                            # point arithmetic issues
+                            # https://docs.python.org/3.3/tutorial/floatingpoint.html#floating-point-arithmetic-issues-and-limitations
+                            a = '{:f}'.format(datum)
+                            b = '{:f}'.format(prev_datum)
+                            if coord == prev_coord + 1 and  a == b:
+                                # combine sequential equivalent bases for writeout 
+                                # as a range in the bedgraph format
+                                # update placeholder objects
+                                end_coord_writeout = coord + 1
+                                prev_coord = coord
+                                
+                            else:
+                                
+                                bg_fh.write('\t'.join(ref_writeout = ref,
+                                                      start_coord_writeout,
+                                                      end_coord_writeout,
+                                                      '{:f}'.format(datum_writeout)) + '\n')
+                                
+                                # update objects to hold values for write out to bedgraph
+                                start_coord_writeout = coord
+                                end_coord_writeout = coord + 1
+                                datum_writeout = datum
+                                
+                                # store the previous values to allow sequential coords that
+                                # hold the same value to be written on a single line (as a 
+                                # range) in the bedgraph format
+                                prev_coord = coord
+                                prev_datum = datum
+                                
                     
                     # final writout for this reference
                     bg_fh.write('\t'.join(ref_writeout = ref,
                                           start_coord_writeout,
                                           end_coord_writeout,
-                                          datum_writeout) + '\n')
-        
-        #TODO: write bottom strand
-
-
-
-
-
-        
-        reference, start, end, strand, data = site_tuple
-            
-ome_coords, both_strands = False, orient_strands = True):
-        """
-        Retrieve the data corresponding to the given coordinates from 
-        the OmeDict. A list of integers is returned (aka a coverage vector).
-        The orient_strands argument caused the minus strand data lists to
-        reverse such that the top and bottom strand vectors are oriented in the
-        same left to right (5'->3') polarity. The both_strands argument here 
-        can be toggled to accomodate strand-agnostic sequencing libraries. 
-        However HITS-CLIP libraries are typically stranded.
-        """
-        reference, start, end, strand = ome_coords
-        
-        if both_strands:
-            t_strand_data = []
-            b_strand_data = []
-            for coord in range(start, end):
-                try:
-                    t_strand_data.append(self.d['+'][reference].get(coord, 0))
-                except KeyError:
-                    t_strand_data.append(0)
-                try:
-                    b_strand_data.append(self.d['-'][reference].get(coord, 0))
-                except KeyError:
-                    b_strand_data.append(0)
-            data = [sum(x) for x in zip(t_strand_data, b_strand_data)]
-        else:
-            data = []
-            for coord in range(start, end):
-                try:
-                    data.append(self.d[strand][reference].get(coord, 0))
-                except KeyError:
-                    data.append(0)
-        
-        if orient_strands and strand == '-':
-            data.reverse()
-        
-        return data
-
-                if oneD_rate_mode == True:
-                    oneD_rate_vec = []
-                    for x, y in zip(oneD_vec, raw_cover_vec):
-                        if y < rate_cutoff:
-                            oneD_rate_vec.append(0)
-                        else:
-                            oneD_rate_vec.append(x/y)
+                                          {':f'}.format(datum_writeout)) + '\n')
                     
-                    oneD_vec = oneD_rate_vec
-                
-                if cleav_rate_mode == True:
-                    cleav_rate_vec = []
-                    for x, y in zip(cleavage_vec, raw_cov_vec):
-                        if y < rate_cutoff:
-                            cleav_rate_vec.append(0)
-                        else:
-                            cleav_rate_vec.append(x/y)
-                    
-                    cleavage_vec = cleav_rate_vec
-                
-                vector_tuple = ( raw_cover_vec,
-                                 oneD_vec,
-                                 cleavage_vec )
+                    return n_of_nt_covered, n_of_sequenced_bases
+        
+        t = write_strand(b_ref = b_ref, 
+                         b_coord = b_coord, 
+                         strand = '+', 
+                         bg_fh = bg_fh_top_strand)
+        
+        print(t) # debugging
+        n_of_nt_covered, n_of_sequenced_bases = t
+        
+        t = write_strand(b_ref = b_ref, 
+                         b_coord = b_coord, 
+                         strand = '-', 
+                         bg_fh = bg_fh_bot_strand)
+        
+        n_of_nt_covered += t[0]
+        n_of_sequenced_bases += t[1]
+        print(t) # debugging
+        
+        return n_of_nt_covered, n_of_sequenced_bases
 

@@ -77,9 +77,6 @@ def main(argv=None):
             #readid_db_fp_l, optional, there must be one cleav_file per bam_file
             parser_hcg.add_argument('--cleav_files', nargs='+')
             
-            #out_pdf_fp #TODO: use pwd as default
-            parser_hcg.add_argument('-o', '--output', nargs='?')
-            
             parser_hcg.set_defaults(func=hitsclip_bed-dump_cli)
             
         except SystemExit as exitStat:

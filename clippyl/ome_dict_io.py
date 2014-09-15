@@ -106,12 +106,8 @@ class OmeDict():
                       b_coord, 
                       rate_mode = False, # use rate mode for normalization
                       rate_cutoff = 0, # minimum number of sequenced bases required to calculate a coverage rate
-                      rate_denom_od = {}, # ome dict containing rate denominator (the numerator is the ome_dict)
+                      rate_denom_cd = {}, # ome dict containing rate denominator (the numerator is the ome_dict)
                       ):
-        
-        # the function will return these coverage stats
-        n_of_nt_covered = 0
-        n_of_sequenced_bases = 0
         
         # note: I used nested functions for writing. This allowed me to use 
         # return to break out of the nested loop
@@ -123,6 +119,10 @@ class OmeDict():
             # previous python versions
             # http://stackoverflow.com/a/6777632/892030
             # http://legacy.python.org/dev/peps/pep-0469/
+            
+            # the function will return these coverage stats
+            n_of_nt_covered = 0
+            n_of_sequenced_bases = 0
             
             for ref in list(self.d[strand].keys()):
                 
@@ -137,7 +137,7 @@ class OmeDict():
                 # initial check that we are not beyond the boundary
                 if b_ref == ref and b_coord <= coord:
                     # we are beyond the boundary, exit
-                    return
+                    return n_of_sequenced_bases, n_of_nt_covered
                 else:
                     # begin dumping bases in this reference...
                     # first instantiate objects to hold values for 
@@ -153,15 +153,15 @@ class OmeDict():
                         # not enough sequenced bases in the denominator
                         # otherwise, it is assumed that there are enough 
                         # observations to calculate a rate
-                        if rate_denom_od[strand][ref][coord] < rate_cutoff
+                        if rate_denom_cd.d[strand][ref][coord] < rate_cutoff:
                             datum_writeout = None
                         else:
-                            datum_writeout = datum/rate_denom_od[strand][ref][coord]
+                            datum_writeout = datum/rate_denom_cd.d[strand][ref][coord]
                             # store the previous values to allow sequential coords that
                             # hold the same value to be written on a single line (as a 
                             # range) in accordance with the bedgraph format
                             prev_coord = coord
-                            prev_datum = datum/rate_denom_od[strand][ref][coord]
+                            prev_datum = datum/rate_denom_cd.d[strand][ref][coord]
                     else:
                         datum_writeout = datum
                         # store the previous values to allow sequential coords that
@@ -199,18 +199,32 @@ class OmeDict():
                                 # not enough sequenced bases in the denominator
                                 # otherwise, it is assumed that there are enough 
                                 # observations to calculate a rate
-                                if rate_denom_od[strand][ref][coord] < rate_cutoff
+                                if rate_denom_cd.d[strand][ref][coord] < rate_cutoff:
                                     datum = None
+                                    # update objects to hold values for write out to bedgraph
+                                    start_coord_writeout = coord
+                                    end_coord_writeout = coord + 1
+                                    datum_writeout = datum
+                                    
+                                    # store the previous values to allow sequential coords that
+                                    # hold the same value to be written on a single line (as a 
+                                    # range) in the bedgraph format
+                                    prev_coord = coord
+                                    prev_datum = datum
+                                    continue
                                 else:
-                                    datum = datum/rate_denom_od[strand][ref][coord]
+                                    datum = datum/rate_denom_cd.d[strand][ref][coord]
                             else:
                                 pass
                             
                             # convert to string representation to avoid floating
                             # point arithmetic issues
                             # https://docs.python.org/3.3/tutorial/floatingpoint.html#floating-point-arithmetic-issues-and-limitations
+                            print(datum)
+                            print(prev_datum)
                             a = '{:f}'.format(datum)
-                            b = '{:f}'.format(prev_datum)
+                            if prev_datum != None:
+                                b = '{:f}'.format(prev_datum)
                             if coord == prev_coord + 1 and  a == b:
                                 # combine sequential equivalent bases for writeout 
                                 # as a range in the bedgraph format
@@ -219,8 +233,7 @@ class OmeDict():
                                 prev_coord = coord
                                 
                             else:
-                                
-                                bg_fh.write('\t'.join(ref_writeout = ref,
+                                bg_fh.write('\t'.join(ref_writeout,
                                                       start_coord_writeout,
                                                       end_coord_writeout,
                                                       '{:f}'.format(datum_writeout)) + '\n')
@@ -238,12 +251,13 @@ class OmeDict():
                                 
                     
                     # final writout for this reference
-                    bg_fh.write('\t'.join(ref_writeout = ref,
+                    bg_fh.write('\t'.join(ref_writeout,
                                           start_coord_writeout,
                                           end_coord_writeout,
                                           {':f'}.format(datum_writeout)) + '\n')
                     
-                    return n_of_nt_covered, n_of_sequenced_bases
+            
+            return n_of_nt_covered, n_of_sequenced_bases
         
         t = write_strand(b_ref = b_ref, 
                          b_coord = b_coord, 

@@ -3,6 +3,7 @@ import argparse
 
 from .hitsclip_graphics import hitsclip_graphics_cli
 from .build_cleaved_read_db import build_read_db_cli
+from .hitsclip_bed_dump import hitsclip_bed_dump_cli
 
 class Usage(Exception):
     def __init__(self, exitStat):
@@ -62,14 +63,9 @@ def main(argv=None):
             #TODO: output directory argument
             parser_hcg.set_defaults(func=build_read_db_cli)
             
-            # parse the args and call whatever function was selected
-            args = parser.parse_args()
-            print(args) #debugging
-            args.func(args)
-            
             ####SUBPARSER HITS-CLIP BED-DUMP
             # create the subparser for the "hitsclip_graphics" command
-            parser_hcg = subparsers.add_parser('bed-dump')
+            parser_hcg = subparsers.add_parser('hitsclip_bed_dump')
             
             #bam_fp_l, required
             parser_hcg.add_argument('bam_files', nargs='+')
@@ -77,7 +73,12 @@ def main(argv=None):
             #readid_db_fp_l, optional, there must be one cleav_file per bam_file
             parser_hcg.add_argument('--cleav_files', nargs='+')
             
-            parser_hcg.set_defaults(func=hitsclip_bed-dump_cli)
+            parser_hcg.set_defaults(func=hitsclip_bed_dump_cli)
+            
+            # parse the args and call whatever function was selected
+            args = parser.parse_args()
+            print(args) #debugging
+            args.func(args)
             
         except SystemExit as exitStat:
             raise Usage(exitStat)

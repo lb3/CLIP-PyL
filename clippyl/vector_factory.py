@@ -213,10 +213,10 @@ class hitsclip_vectors_2_bg():
                        sample_name,
                        bg_fh_top_strand_cov,
                        bg_fh_bot_strand_cov,
-                       bg_fh_top_strand_clv,
-                       bg_fh_bot_strand_clv,
-                       bg_fh_strand_1D,
-                       bg_fh_strand_1D,
+                       bg_fh_top_strand_term,
+                       bg_fh_bot_strand_term,
+                       bg_fh_top_strand_1D,
+                       bg_fh_bot_strand_1D,
                        cleaved_readid_db_conn = None,
                        all_adapter_clipped = False,
                        uniq_only = True,
@@ -233,10 +233,9 @@ class hitsclip_vectors_2_bg():
         bg_fh_bot_strand_cov.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand coverage'))
         bg_fh_top_strand_term.write(generic_head.format('5\'--> termini', sample_name, 'Top strand termini'))
         bg_fh_bot_strand_term.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom strand termini'))
-        bg_fh_strand_1D.write(generic_head.format('5\'--> coverage', sample_name, 'Top strand single nucleotide deletions'))
-        bg_fh_strand_1D.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom single nucleotide deletions'))
+        bg_fh_top_strand_1D.write(generic_head.format('5\'--> coverage', sample_name, 'Top strand single nucleotide deletions'))
+        bg_fh_bot_strand_1D.write(generic_head.format('<--3\' coverage', sample_name, 'Bottom single nucleotide deletions'))
         
-        i = pysam_bam_file_conn.fetch()
         
         # instantiate OmeDict, which will aggregate and then output the
         # relevant basewise data as it is gleaned from the alignment data
@@ -246,7 +245,7 @@ class hitsclip_vectors_2_bg():
         
         chunk_size = 0 # an object to manage memory tracks with n_of_nt_covered
         
-        for i in fetched_alignments:
+        for alignment in pysam_bam_file_conn.fetch():
             
             self.stat_dict['n_of_mapped_reads'] += 1
             
@@ -327,7 +326,7 @@ class hitsclip_vectors_2_bg():
                     if operation != 1:
                         i += length
                         if operation == 2 and length == 1:
-                            oneD_st = SiteTuple(reference,
+                            oneD_st = SiteTuple(reference = d['RNAME'],
                                                 start = d['POS'] + i,
                                                 end = d['POS'] + i + 1,
                                                 strand = d['strand'],

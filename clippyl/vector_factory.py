@@ -252,7 +252,7 @@ class hitsclip_vectors_2_bg():
             d = {}
             #TODO: verify that zero-based coord is returned
             d['QNAME'] = alignment.qname # read ID
-            d['RNAME'] =  alignment.rname # reference
+            d['RNAME'] =  pysam_bam_file_conn.getrname(alignment.tid) # reference
             d['POS'] = alignment.pos
             d['AEND'] = alignment.aend
             d['CIGAR'] = alignment.cigar

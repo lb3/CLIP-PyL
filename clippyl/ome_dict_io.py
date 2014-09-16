@@ -124,7 +124,15 @@ class OmeDict():
             n_of_nt_covered = 0
             n_of_sequenced_bases = 0
             
+            data_writeout = None
+            ref_writeout =None
+            start_coord_writeout = None
+            end_coord_writeout = None
+            datum_writeout = None
+            
             for ref in list(self.d[strand].keys()):
+                
+                print('first ref in loop', ref) #debugging
                 
                 coord_l = list(self.d[strand][ref])
                 
@@ -133,10 +141,14 @@ class OmeDict():
                 coord = coord_l[i]
                 datum = self.d[strand][ref][coord_l[i]]
                 assert type(coord) == int
+                print('first coord', coord)
                 assert type(datum) == int
+                print('first datum', datum)
                 # initial check that we are not beyond the boundary
                 if b_ref == ref and b_coord <= coord:
                     # we are beyond the boundary, exit
+                    print('boundary ref', ref) # debugging
+                    print('boundary ref', coord) # debugging
                     return n_of_sequenced_bases, n_of_nt_covered
                 else:
                     # begin dumping bases in this reference...
@@ -147,6 +159,10 @@ class OmeDict():
                     end_coord_writeout = coord + 1
                     n_of_nt_covered += 1
                     n_of_sequenced_bases += datum
+                    # store the previous values to allow sequential coords that
+                    # hold the same value to be written on a single line (as a 
+                    # range) in accordance with the bedgraph format
+                    prev_coord = coord
                     
                     if rate_mode:
                         # with rate_cutoff nothing will be written if there are
@@ -155,107 +171,102 @@ class OmeDict():
                         # observations to calculate a rate
                         if rate_denom_cd.d[strand][ref][coord] < rate_cutoff:
                             datum_writeout = None
+                            # store the previous values to allow sequential coords that
+                            # hold the same value to be written on a single line (as a 
+                            # range) in accordance with the bedgraph format
+                            prev_datum = None
                         else:
                             datum_writeout = datum/rate_denom_cd.d[strand][ref][coord]
                             # store the previous values to allow sequential coords that
                             # hold the same value to be written on a single line (as a 
                             # range) in accordance with the bedgraph format
-                            prev_coord = coord
                             prev_datum = datum/rate_denom_cd.d[strand][ref][coord]
                     else:
                         datum_writeout = datum
                         # store the previous values to allow sequential coords that
                         # hold the same value to be written on a single line (as a 
                         # range) in accordance with the bedgraph format
-                        prev_coord = coord
                         prev_datum = datum
                     
                     # purge from memory
                     del self.d[strand][ref][coord]
+                
+                for coord in coord_l[1:]:
+                    i += 1
+                    if b_ref == ref and b_coord <= coord:
+                        # past boundary, write current values to file
+                        # and exit func
+                        if datum_writeout != None:
+                            bg_fh.write('\t'.join([ref_writeout,
+                                                   str(start_coord_writeout),
+                                                   str(end_coord_writeout),
+                                                   '{:f}'.format(datum_writeout)]) + '\n')
+                            return n_of_sequenced_bases, n_of_nt_covered
+                        else:
+                            return n_of_sequenced_bases, n_of_nt_covered
+                    else:
+                        pass
                     
-                    if len(coord_l) > 1:
-                        for coord in coord_l[1:]:
-                            if b_ref == ref and b_coord <= coord:
-                                # past boundary, write current values to file
-                                # and exit func
-                                if datum_writeout != None:
-                                    bg_fh.write('\t'.join(ref_writeout,
-                                                          str(start_coord_writeout),
-                                                          str(end_coord_writeout),
-                                                          '{:f}'.format(datum_writeout)) + '\n')
-                                    return n_of_sequenced_bases, n_of_nt_covered
-                                else:
-                                    return n_of_sequenced_bases, n_of_nt_covered
-                            else:
-                                pass
-                            
-                            datum = self.d[strand][ref][coord]
-                            del self.d[strand][ref][coord]
-                            n_of_nt_covered += 1
-                            n_of_sequenced_bases += datum
-                            
-                            if rate_mode:
-                                # with rate_cutoff nothing will be written if there are
-                                # not enough sequenced bases in the denominator
-                                # otherwise, it is assumed that there are enough 
-                                # observations to calculate a rate
-                                if rate_denom_cd.d[strand][ref][coord] < rate_cutoff:
-                                    datum = None
-                                    # update objects to hold values for write out to bedgraph
-                                    start_coord_writeout = coord
-                                    end_coord_writeout = coord + 1
-                                    datum_writeout = datum
-                                    
-                                    # store the previous values to allow sequential coords that
-                                    # hold the same value to be written on a single line (as a 
-                                    # range) in the bedgraph format
-                                    prev_coord = coord
-                                    prev_datum = datum
-                                    continue
-                                else:
-                                    datum = datum/rate_denom_cd.d[strand][ref][coord]
-                            else:
-                                pass
-                            
-                            # convert to string representation to avoid floating
-                            # point arithmetic issues
-                            # https://docs.python.org/3.3/tutorial/floatingpoint.html#floating-point-arithmetic-issues-and-limitations
-                            print(datum)
-                            print(prev_datum)
-                            a = '{:f}'.format(datum)
-                            if prev_datum != None:
-                                b = '{:f}'.format(prev_datum)
-                            if coord == prev_coord + 1 and  a == b:
-                                # combine sequential equivalent bases for writeout 
-                                # as a range in the bedgraph format
-                                # update placeholder objects
-                                end_coord_writeout = coord + 1
-                                prev_coord = coord
-                                
-                            else:
-                                bg_fh.write('\t'.join(ref_writeout,
-                                                      start_coord_writeout,
-                                                      end_coord_writeout,
-                                                      '{:f}'.format(datum_writeout)) + '\n')
-                                
-                                # update objects to hold values for write out to bedgraph
-                                start_coord_writeout = coord
-                                end_coord_writeout = coord + 1
-                                datum_writeout = datum
-                                
-                                # store the previous values to allow sequential coords that
-                                # hold the same value to be written on a single line (as a 
-                                # range) in the bedgraph format
-                                prev_coord = coord
-                                prev_datum = datum
-                                
+                    datum = self.d[strand][ref][coord]
+                    del self.d[strand][ref][coord]
+                    n_of_nt_covered += 1
+                    n_of_sequenced_bases += datum
                     
-                    # final writout for this reference
-                    bg_fh.write('\t'.join(ref_writeout,
-                                          start_coord_writeout,
-                                          end_coord_writeout,
-                                          {':f'}.format(datum_writeout)) + '\n')
+                    if rate_mode:
+                        # with rate_cutoff nothing will be written if there are
+                        # not enough sequenced bases in the denominator
+                        # otherwise, it is assumed that there are enough 
+                        # observations to calculate a rate
+                        if rate_denom_cd.d[strand][ref][coord] < rate_cutoff:
+                            datum = None
+                        else:
+                            datum = datum/rate_denom_cd.d[strand][ref][coord]
+                    else:
+                        pass
                     
+                    # convert to string representation to avoid floating
+                    # point arithmetic issues
+                    # https://docs.python.org/3.3/tutorial/floatingpoint.html#floating-point-arithmetic-issues-and-limitations
+                    print('datum', datum)
+                    print('previous datum', prev_datum)
+                    
+                    if datum != None and datum_writeout != None:
+                        a = '{:f}'.format(datum)
+                        b = '{:f}'.format(datum_writeout)
+                        if coord == prev_coord + 1 and  a == b:
+                            # combine sequential equivalent bases for writeout 
+                            # as a range in the bedgraph format
+                            # update placeholder objects
+                            end_coord_writeout = coord + 1
+                            prev_coord = coord
+                            continue
+                        
+                    elif datum_writeout != None:
+                        
+                        bg_fh.write('\t'.join([ref_writeout,
+                                               str(start_coord_writeout),
+                                               str(end_coord_writeout),
+                                               '{:f}'.format(datum_writeout)]) + '\n')
+                    
+                    # update objects to hold values for write out to bedgraph
+                    start_coord_writeout = coord
+                    end_coord_writeout = coord + 1
+                    datum_writeout = datum
+                    
+                    # store the previous values to allow sequential coords that
+                    # hold the same value to be written on a single line (as a 
+                    # range) in the bedgraph format
+                    prev_coord = coord
+                    prev_datum = datum
+                    
+                    
+                # final writout for this reference
+                if data_writeout != None:
+                    
+                    bg_fh.write('\t'.join([ref_writeout,
+                                               str(start_coord_writeout),
+                                               str(end_coord_writeout),
+                                               '{:f}'.format(datum_writeout)]) + '\n')
             
             return n_of_nt_covered, n_of_sequenced_bases
         

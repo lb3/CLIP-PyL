@@ -245,9 +245,12 @@ class hitsclip_vectors_2_bg():
         
         chunk_size = 0 # an object to manage memory tracks with n_of_nt_covered
         
+        # store reference lengths
+        ref_length_d = {}
+        for ref, ref_length in zip(pysam_bam_file_conn.references, pysam_bam_file_conn.lengths):
+            ref_length_d[ref] = int(ref_length)
+        
         for alignment in pysam_bam_file_conn.fetch():
-            
-            self.stat_dict['n_of_mapped_reads'] += 1
             
             d = {}
             #TODO: verify that zero-based coord is returned
@@ -255,6 +258,9 @@ class hitsclip_vectors_2_bg():
             d['RNAME'] =  pysam_bam_file_conn.getrname(alignment.tid) # reference
             d['POS'] = alignment.pos
             d['AEND'] = alignment.aend
+            # alignments that span multiple references won't be considered
+            if d['AEND'] > ref_length_d[d['RNAME']]:
+                continue
             d['CIGAR'] = alignment.cigar
             d['IS_REVERSE'] = alignment.is_reverse
             if alignment.is_reverse:
@@ -262,6 +268,8 @@ class hitsclip_vectors_2_bg():
             else:
                 d['strand'] = '+'
             d['OPT_XT'] = alignment.opt('XT')
+            
+            self.stat_dict['n_of_mapped_reads'] += 1
             
             #identify uniquely aligned reads by accessing the sam optdict
             if d['OPT_XT'] == 'U':

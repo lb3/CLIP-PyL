@@ -1,23 +1,11 @@
 ----
 TODO
 ----
-* add UNIT TESTS
+* fix setup.py
+
+* add unit tests
 ** use sample data files with subsetted bam files + histones with stemloops bed
 ** Kishore HuR PAR-CLIP SRR189779 choked previous versions of CLIP-PyL, test now
-
-**Always Remember**
-/Make your best effort to adhere to the Style Guide for Python Code/
-[[http://www.python.org/dev/peps/pep-0008/][(PEP8)]]
-
-----------
-KNOWN BUGS
-----------
-
-* There may be a one-off error in the iCLIP routine. 
-  You must use the nt immediately upstream of the mapped 5' read as the RT 
-  termination point 
-
-* EXPLICITLY DECLARE MPL BACKEND IN mpl_graphics routines
 
 * Fix SamReader error reporting
 ** When input filepath cannot be read, the output is ugly::
@@ -43,6 +31,20 @@ KNOWN BUGS
     AttributeError: 'SamReader' object has no attribute 'alignment'
 
     2.include __enter__ and __exit__ methods, move SamReader calls to context manager
+
+**Always Remember**
+/Make your best effort to adhere to the Style Guide for Python Code/
+[[http://www.python.org/dev/peps/pep-0008/][(PEP8)]]
+
+----------
+KNOWN BUGS
+----------
+
+* There may be a one-off error in the iCLIP routine. 
+  You must use the nt immediately upstream of the mapped 5' read as the RT 
+  termination point 
+
+* EXPLICITLY DECLARE MPL BACKEND IN mpl_graphics routines
 
 ------
 Future

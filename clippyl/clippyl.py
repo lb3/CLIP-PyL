@@ -9,14 +9,11 @@ class Usage(Exception):
     def __init__(self, exitStat):
         self.exitStat = exitStat
 
-#TODO: build the CLI for clippyl ... call the hitclip pipeline routine from here (and other routines).
+#citeable docs
 #http://gehrcke.de/2014/02/distributing-a-python-command-line-application/
 #https://github.com/jgehrcke/python-cmdline-bootstrap/blob/master/bootstrap/__main__.py
 #https://python-packaging-user-guide.readthedocs.org/en/latest/current.html
-
-#subcommand docs in argparse https://docs.python.org/dev/library/argparse.html#sub-commands
-
-#placeholder
+#https://docs.python.org/dev/library/argparse.html#sub-commands
 
 def main(argv=None):
     if argv is None:

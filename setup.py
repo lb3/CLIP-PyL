@@ -5,9 +5,9 @@ import os.path
 from distutils.core import setup
 
 
-if sys.version_info[0] != 3 or sys.version_info[1] < 2:
-   sys.stderr.write( "Error in setup script for HTSeq:\n" )
-   sys.stderr.write( "You need at least version 2.5 of Python to use HTSeq.\n" )
+if sys.version_info[0] >= 3 and sys.version_info[1] > 2:
+   sys.stderr.write( "Error in setup script for CLIP-PyL:\n" )
+   sys.stderr.write( "You need at least version 3 of Python to use CLIP-PyL.\n" )
    sys.exit( 1 )
 
 setup(

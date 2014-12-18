@@ -19,9 +19,9 @@ def build_cleaved_read_db(fp_l):
     for in_fp in fp_l:
         
         #determine output file name for the sqlite3 db
-        # parameterize out_dir. use 
-        #TODO: use directory where inputy files are found as default instead
-        out_dir = os.getcwd()
+        #TODO: parameterize out_directory
+        # use directory where input files are found as default
+        out_dir = os.path.dirname(in_fp)
         file_name, file_ext = os.path.splitext(os.path.basename(in_fp))
         out_db_fp = os.path.join(out_dir, file_name + '.readids')
         print('readids will be written to:')

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/python3
-
+import gzip
+import io
 import re
 #from bioPyL.bioUtils.compareCoords import getOverlap
 #from bioPyL.bioFileRW.bedO import bed12_reader
@@ -10,7 +11,10 @@ import re
 class FastqReader():
     """
     This iterable object class will read a fastq file entrywise
-    and yield a dictionary containing read entry info.
+    and yield a dictionary containing read entry info. If the fastq
+    file is in gzip-format then set the gzip_mode boolean to True.
+    The format_validator method can be used to check that the expected
+    fastq file formatting is present.
     """
     
     # USE FOR 'SINGLE LINE' FASTQ ONLY
@@ -18,10 +22,13 @@ class FastqReader():
     # hint: if you do not have a 'single line' fastq file then 
     # you may need to preprocess with fastx-toolkit's fasta_formatter
     
-    def __init__(self, filepath):
+    def __init__(self, filepath, gzip_mode = False):
         
         try:
-            self.fh = open(filepath)
+            if gzip_mode:
+                self.fh = io.TextIOWrapper(io.BufferedReader(gzip.open(filepath)))
+            else:
+                self.fh = open(filepath)
             # read each line of read entry
             self.topid = self.fh.readline().rstrip() # ID entry
             self.read = self.fh.readline().rstrip() # read

@@ -5,9 +5,8 @@ def get_data_dir():
     return data_dir
 
 def histone_gene_bed_fp():
-    return os.path.join(get_data_dir(), 'histone_genes_HGNC.bed')
+    return os.path.join(get_data_dir(), 'genomic_interval_queries', 'histone_genes_HGNC.bed')
 
 def histone_sl_bed_fp():
-    return os.path.join(get_data_dir(), 'histone_SL_elements.bed')
-
+    return os.path.join(get_data_dir(), 'cis_element_annotations', 'histone_SL_elements.bed')
 

@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import sys
+import argparse
+from clippyl.bedgraph_dump import bed_dump_cli
+
+#            ####SUBPARSER BUILD CLEAVAGE DB
+#            # create the subparser for the "build_cleav_db" command
+#            parser_hcg = subparsers.add_parser('build_cleav_db')
+#            
+#            #fastq files of adapter clipped-only reads; required
+#            parser_hcg.add_argument('fq_files', nargs='+')
+#            #TODO: output directory argument
+#            parser_hcg.set_defaults(func=build_read_db_cli)
+
+class Usage(Exception):
+    def __init__(self, exitStat):
+        self.exitStat = exitStat
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    try:
+        try:
+            
+            #TODO: provide list of possible functions
+            # create the top-level parser
+            d = '''This is the CLI for clippyl's bedgraph creation program'''
+            parser = argparse.ArgumentParser(description=d)
+            
+            #bam_fp_l, required
+            parser.add_argument('bam_files', nargs='+')
+            
+            #readid_db_fp_l, optional kwarg
+            #note: there must be one cleav_file per bam_file
+            parser.add_argument('--adapter_clipped_files', nargs='+')
+            
+            #only hits-clip is currently supported (optional kwarg)
+            #TODO: incorporate code for par-clip and iclip
+            parser.add_argument('--clipseq_method', choices=['hits-clip',],
+                                default='hits-clip')
+            
+            parser.set_defaults(func=bed_dump_cli)
+            
+            # parse the args and call whatever function was selected
+            args = parser.parse_args()
+            print(args) #debugging
+            args.func(args)
+            
+        except SystemExit as exitStat:
+            raise Usage(exitStat)
+    
+    except Usage as err:
+        return err.exitStat
+
+main()
+

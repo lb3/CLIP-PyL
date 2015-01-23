@@ -4,22 +4,28 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-from .flatfile_parsing import Bed6Reader
-from .sqlite_io import ReadidSQLite, Bed6SQLite
-from .mpl_graphics import hits_clip_plot
+from clippyl.flatfile_parsing import Bed6Reader
+from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
+from clippyl.mpl_graphics import hits_clip_plot
 
-def hitsclip_graphics_cli(args):
+def coverage_graphics_cli(args):
     print(args.bam_files,
           args.cleav_files,
           args.query,
           args.ciselements,
-          args.output)
+          args.output,
+          args.clipseq_method)
     
-    hitsclip_graphics(args.bam_files,
-                      args.cleav_files,
-                      args.query,
-                      args.ciselements,
-                      args.output)
+    if args.clipseq_method == 'hits-clip':
+        hitsclip_graphics(args.bam_files,
+                          args.cleav_files,
+                          args.query,
+                          args.ciselements,
+                          args.output)
+    else:
+        #TODO: incorporate par-clip and iclip options
+        pass
+    
     return
 
 def hitsclip_graphics(  bam_fp_l,

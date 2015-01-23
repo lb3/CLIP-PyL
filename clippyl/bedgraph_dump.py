@@ -1,15 +1,19 @@
 import pysam
 import os
 
-from .sqlite_io import ReadidSQLite
-from .vector_factory import hitsclip_vectors_2_bg
+from clippyl.sqlite_io import ReadidSQLite
+from clippyl.vector_factory import hitsclip_vectors_2_bg
 
-def hitsclip_bed_dump_cli(args):
+def bed_dump_cli(args):
     print(args.bam_files,
-          args.cleav_files)
+          args.adapter_clipped_files)
     
-    hitsclip_bed_dump(args.bam_files,
-                      args.cleav_files)
+    if args.clipseq_method == 'hits-clip':
+        hitsclip_bed_dump(args.bam_files,
+                          args.adapter_clipped_files)
+    else:
+        #TODO: incorporate par-clip and iclip options
+        pass
     
     return
 

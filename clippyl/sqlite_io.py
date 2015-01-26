@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
+import os
+import sqlite3
+import time
 
 from clippyl.flatfile_parsing import (FastqReader,
                                       validate_fastq_file,
                                       get_cluster_coords,
                                       Bed6Reader)
-
-#TODO: adhere to docstring conventions docs:
-#http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html
-#http://legacy.python.org/dev/peps/pep-0257/
-#http://legacy.python.org/dev/peps/pep-0008/
-
-import sqlite3
 
 class SQLiteBase():
     '''
@@ -190,32 +186,4 @@ class Bed6SQLite(SQLiteBase):
                             AND (start BETWEEN ? AND ? OR end BETWEEN ? AND ?)''', t)
         
         return self.c.fetchall()
-
-
-###TESTING
-#TODO: actually code th main function here and link it up to the
-# sample data in the clippyl directory structure so that it can be
-# run as a test.
-##===================MAIN FUNC AREA
-#import time
-
-#print('#######################################')
-#print('extracting readids from fastq file')
-
-#in_fp = '/storage/Ziggy_BigGuy/LB_Bioinformatics/data_Projects/Brooks_HITS_CLIP_SLBP/cleavage_site_mapping/preprocessed_Fastq_discardUnclipped/s_1xS01_sequence.PP.fastq'
-##in_fp = '/home/lbthrice/Desktop/fastq_sample/clippedOnly/SRR189782.PP.fastq'
-#out_db_fp = 'test_qname2_TILEnum2.dat'
-#start_time = time.time()
-#n = input_fastq(in_fp, out_db_fp)
-#elapsed_time = time.time() - start_time
-
-#print('qnames were written and indexed to:')
-#print(out_db_fp)
-#print('The amount of time that elapsed during the process was:')
-#print('{0:.2f}'.format(round(elapsed_time,2)) + ' seconds')
-#print('The number of reads that were processed is:')
-#print(str(n))
-#print('#######################################')
-
-
 

@@ -1,24 +1,68 @@
-import pysam
 import os
+import sys
+import argparse
+import pysam
 
 from clippyl.sqlite_io import ReadidSQLite
 from clippyl.vector_factory import hitsclip_vectors_2_bg
 
-def bed_dump_cli(args):
-    print(args.bam_files,
-          args.adapter_clipped_files)
+class Usage(Exception):
+    def __init__(self, exitStat):
+        self.exitStat = exitStat
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
     
-    if args.clipseq_method == 'hits-clip':
-        hitsclip_bed_dump(args.bam_files,
-                          args.adapter_clipped_files)
-    else:
-        #TODO: incorporate par-clip and iclip options
-        pass
+    try:
+        try:
+            
+            # create the top-level parser
+            d = '''This is the CLI for clippyl's bedgraph creation program'''
+            parser = argparse.ArgumentParser(description=d)
+            
+            #bam_fp_l, required
+            parser.add_argument('bam_files', nargs='+')
+            
+            #readid_db_fp_l, optional kwarg
+            # Note: if the cleav_db_fp is set to None then it is assumed that all
+            # the reads in the sam file are adapter-clipped.
+            # note: there must be one cleav_file per bam_file
+            parser.add_argument('--adapter_clipped_files', nargs='+')
+            
+            #only hits-clip is currently supported (optional kwarg)
+            #TODO: incorporate code for par-clip and iclip
+            parser.add_argument('--clipseq_method', choices=['hits-clip',],
+                                default='hits-clip')
+            
+            #TODO: allow argparse from argument file
+            #https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
+            
+            parser.set_defaults(func=bed_dump_cli)
+            
+            # parse the args and call whatever function was selected
+            args = parser.parse_args()
+            #print(args) #debugging
+            
+            print(args.bam_files,
+                  args.adapter_clipped_files)
+            
+            if args.clipseq_method == 'hits-clip':
+                hitsclip_bed_dump(args.bam_filepaths,
+                          args.adapter_clipped_fastq_filepaths,
+                          args.adapter_clipped_readid_db_filepaths)
+            else:
+                #TODO: incorporate par-clip and iclip options
+                pass
+        
+        except SystemExit as exitStat:
+            raise Usage(exitStat)
     
-    return
+    except Usage as err:
+        return err.exitStat
 
 def hitsclip_bed_dump(  bam_fp_l,
-                        readid_db_fp_l,
+                        readid_db_fp_l = None,
                       ):
     
     '''Dump hitsclip stats to bed files'''

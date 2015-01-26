@@ -1,5 +1,8 @@
-import pysam
 import os
+import sys
+import argparse
+
+import pysam
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -8,25 +11,66 @@ from clippyl.flatfile_parsing import Bed6Reader
 from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
 from clippyl.mpl_graphics import hits_clip_plot
 
-def coverage_graphics_cli(args):
-    print(args.bam_files,
-          args.cleav_files,
-          args.query,
-          args.ciselements,
-          args.output,
-          args.clipseq_method)
+#TODO: emulate bedgraph-dump behavior and make it default assume all adaper clipped
+#eg fix this (copied from below)
+    # 2. connect to the readid databases that hold the readids of the adapter 
+    #    clipped reads
+    #TODO: check for readid file extension and build new database if not found
+
+class Usage(Exception):
+    def __init__(self, exitStat):
+        self.exitStat = exitStat
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    try:
+        try:
+            
+            #TODO: provide list of possible functions
+            # create the top-level parser
+            d = '''This is the CLI for generating coverage graphics using clippyl'''
+            parser = argparse.ArgumentParser(description=d)
+            
+            #bam_fp_l, required
+            parser.add_argument('bam_files', nargs='+')
+            
+            #query_bed_fp, required
+            parser.add_argument('-q', '--query', nargs='?')
+            
+            #readid_db_fp_l, (optional kwarg)
+            #note: there must be one cleav_file per bam_file
+            parser.add_argument('--cleav_files', nargs='+')
+            
+            #ciselement_bed_fp_l
+            parser.add_argument('-e', '--ciselements', nargs='+')
+            
+            #out_pdf_fp #TODO: use pwd as default
+            parser.add_argument('-o', '--output', nargs='?')
+            
+            #only hits-clip is currently supported (optional kwarg)
+            #TODO: incorporate code for par-clip and iclip
+            parser.add_argument('--clipseq_method', choices=['hits-clip',],
+                                default='hits-clip')
+            
+            # parse the args and call whatever function was selected
+            args = parser.parse_args()
+            
+            if args.clipseq_method == 'hits-clip':
+                hitsclip_graphics(args.bam_files,
+                                  args.cleav_files,
+                                  args.query,
+                                  args.ciselements,
+                                  args.output)
+            else:
+                #TODO: incorporate par-clip and iclip options
+                pass
+            
+        except SystemExit as exitStat:
+            raise Usage(exitStat)
     
-    if args.clipseq_method == 'hits-clip':
-        hitsclip_graphics(args.bam_files,
-                          args.cleav_files,
-                          args.query,
-                          args.ciselements,
-                          args.output)
-    else:
-        #TODO: incorporate par-clip and iclip options
-        pass
-    
-    return
+    except Usage as err:
+        return err.exitStat
 
 def hitsclip_graphics(  bam_fp_l,
                         readid_db_fp_l,
@@ -95,3 +139,4 @@ def hitsclip_graphics(  bam_fp_l,
         pp.savefig()
     pp.close()
     return
+

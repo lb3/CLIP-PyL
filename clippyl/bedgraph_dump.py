@@ -1,3 +1,7 @@
+"""This module exports:
+main -- a CLI for clippyl's bedgraph creation capabilities
+hitsclip_bed_dump -- the hits-clip bedgraph dump routine
+"""
 import os
 import sys
 import argparse
@@ -7,10 +11,12 @@ from clippyl.sqlite_io import ReadidSQLite
 from clippyl.vector_factory import hitsclip_vectors_2_bg
 
 class Usage(Exception):
+    """A custom class to catch usage exceptions in the main function"""
     def __init__(self, exitStat):
         self.exitStat = exitStat
 
 def main(argv=None):
+    """This is the CLI for clippyl's bedgraph creation program"""
     if argv is None:
         argv = sys.argv
     
@@ -18,17 +24,18 @@ def main(argv=None):
         try:
             
             # create the top-level parser
-            d = '''This is the CLI for clippyl's bedgraph creation program'''
+            d = """This is the CLI for clippyl's bedgraph creation program"""
             parser = argparse.ArgumentParser(description=d)
             
             #bam_fp_l, required
-            parser.add_argument('bam_files', nargs='+')
+            parser.add_argument('bam', nargs='+')
             
             #readid_db_fp_l, optional kwarg
             # Note: if the cleav_db_fp is set to None then it is assumed that all
             # the reads in the sam file are adapter-clipped.
             # note: there must be one cleav_file per bam_file
-            parser.add_argument('--adapter_clipped_files', nargs='+')
+            parser.add_argument('--discardUnclipped_db', nargs='+', 
+                                default=None)
             
             #only hits-clip is currently supported (optional kwarg)
             #TODO: incorporate code for par-clip and iclip
@@ -38,19 +45,13 @@ def main(argv=None):
             #TODO: allow argparse from argument file
             #https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
             
-            parser.set_defaults(func=bed_dump_cli)
-            
-            # parse the args and call whatever function was selected
+            # parse the args
             args = parser.parse_args()
             #print(args) #debugging
             
-            print(args.bam_files,
-                  args.adapter_clipped_files)
-            
             if args.clipseq_method == 'hits-clip':
-                hitsclip_bed_dump(args.bam_filepaths,
-                          args.adapter_clipped_fastq_filepaths,
-                          args.adapter_clipped_readid_db_filepaths)
+                hitsclip_bg_dump(bam_fp_l = args.bam,
+                                  readid_db_fp_l = args.discardUnclipped_db,)
             else:
                 #TODO: incorporate par-clip and iclip options
                 pass
@@ -61,11 +62,16 @@ def main(argv=None):
     except Usage as err:
         return err.exitStat
 
-def hitsclip_bed_dump(  bam_fp_l,
-                        readid_db_fp_l = None,
+def hitsclip_bg_dump( bam_fp_l,
+                      readid_db_fp_l = None,
                       ):
     
-    '''Dump hitsclip stats to bed files'''
+    """Dump hitsclip coverage values to bedgraph files"""
+    
+    if not readid_db_fp_l:
+        readid_db_fp_l = [None,] * len(bam_fp_l)
+    else:
+        pass
     
     for bam_fp, readid_db_fp in zip(bam_fp_l, readid_db_fp_l):
         
@@ -81,17 +87,20 @@ def hitsclip_bed_dump(  bam_fp_l,
         sample_name = os.path.splitext(os.path.basename(bam_fp))
         
         # 2. connect to the readid databases that hold the readids of the adapter 
-        #    clipped reads
-        #TODO: check for readid file extension and build new database if not found
-        cleaved_readid_db_conn = ReadidSQLite(readid_db_fp)
+        #    clipped reads. if the default 
+        #
+        if readid_db_fp:
+            cleaved_readid_db_conn = ReadidSQLite(readid_db_fp)
+        else:
+            cleaved_readid_db_conn = None
         
         # instantiate bedgraph file handles
-        with open(os.path.splitext(bam_fp)[0]+'top_std_cov.bg','w') as bg_fh_top_strand_cov, \
-             open(os.path.splitext(bam_fp)[0]+'bot_std_cov.bg','w') as bg_fh_bot_strand_cov, \
-             open(os.path.splitext(bam_fp)[0]+'top_std_clv.bg','w') as bg_fh_top_strand_clv, \
-             open(os.path.splitext(bam_fp)[0]+'bot_std_clv.bg','w') as bg_fh_bot_strand_clv, \
-             open(os.path.splitext(bam_fp)[0]+'top_std_1D.bg','w') as bg_fh_top_strand_1D, \
-             open(os.path.splitext(bam_fp)[0]+'bot_std_1D.bg','w') as bg_fh_bot_strand_1D:
+        with open(os.path.splitext(bam_fp)[0]+'.top_std_cov.bg','w') as bg_fh_top_strand_cov, \
+             open(os.path.splitext(bam_fp)[0]+'.bot_std_cov.bg','w') as bg_fh_bot_strand_cov, \
+             open(os.path.splitext(bam_fp)[0]+'.top_std_clv.bg','w') as bg_fh_top_strand_clv, \
+             open(os.path.splitext(bam_fp)[0]+'.bot_std_clv.bg','w') as bg_fh_bot_strand_clv, \
+             open(os.path.splitext(bam_fp)[0]+'.top_std_1D.bg','w') as bg_fh_top_strand_1D, \
+             open(os.path.splitext(bam_fp)[0]+'.bot_std_1D.bg','w') as bg_fh_bot_strand_1D:
             
             f = hitsclip_vectors_2_bg()
             f( bam_fh,
@@ -103,7 +112,6 @@ def hitsclip_bed_dump(  bam_fp_l,
                bg_fh_top_strand_1D,
                bg_fh_bot_strand_1D,
                cleaved_readid_db_conn = cleaved_readid_db_conn,
-               all_adapter_clipped = False,
                uniq_only = True,
                oneD_rate_mode = True,
                oneD_rate_cutoff = 15,

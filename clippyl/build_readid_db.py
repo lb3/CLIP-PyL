@@ -1,9 +1,10 @@
 import os
 import sys
 import argparse
+import time
 
 from clippyl.sqlite_io import ReadidSQLite
-from clippyl.vector_factory import hitsclip_vectors_2_bg
+
 
 class Usage(Exception):
     def __init__(self, exitStat):
@@ -17,7 +18,11 @@ def main(argv=None):
         try:
             
             # create the top-level parser
-            d = '''This is the CLI for clippyl's readid database builder'''
+            d = '''This is the CLI for clippyl's readid ''' + \
+                '''database builder.\nUse this tool to produce ''' +\
+                '''a clippyl-compatible databse containing ''' +\
+                '''the IDs of\nreads that contained adapter sequence ''' +\
+                '''and were clipped.'''
             parser = argparse.ArgumentParser(description=d)
             
             #fastq files of adapter clipped-only reads; required
@@ -39,9 +44,10 @@ def main(argv=None):
     except Usage as err:
         return err.exitStat
 
-def build_cleaved_read_db(fp_l):
-    '''build a sqlite database containing the coordinates of the cleaved reads 
-       in the fastq files'''
+def build_ReadidSQLite_dbs(fp_l):
+    """Build a ReadidSQLite database containing the 
+    read IDs from a list of fastq files.
+    """
     
     print('#######################################')
     print('extracting readids from fastq file')
@@ -50,7 +56,8 @@ def build_cleaved_read_db(fp_l):
         
         #determine output file name for the sqlite3 db
         #TODO: parameterize out_directory
-        # use directory where input files are found as default
+        # using directory where input files are found as default
+        # NOTE: DEFAULT FILE INPUT IS GZIP
         out_dir = os.path.dirname(in_fp)
         file_name, file_ext = os.path.splitext(os.path.basename(in_fp))
         out_db_fp = os.path.join(out_dir, file_name + '.readids')

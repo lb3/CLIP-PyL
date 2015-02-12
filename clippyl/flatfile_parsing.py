@@ -22,7 +22,7 @@ class FastqReader():
     # hint: if you do not have a 'single line' fastq file then 
     # you may need to preprocess with fastx-toolkit's fasta_formatter
     
-    def __init__(self, filepath, gzip_mode = False):
+    def __init__(self, filepath, gzip_mode = True):
         
         try:
             if gzip_mode:

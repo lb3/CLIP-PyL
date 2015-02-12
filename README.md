@@ -1,6 +1,6 @@
 #CLIP-PyL
 
-The is the ALPHA release of the CLIP-PyL package, which contains scripts that can parse "crosslink signatures" from aligned CLIP-seq data.
+This is the ALPHA release of the CLIP-PyL package, which contains scripts that can parse "crosslink signatures" from aligned CLIP-seq data.
 
 Currently, HITS-CLIP is the only CLIP-seq method that is supported. However, PAR-CLIP and iCLIP data will be supported if considerable interest arises.
 

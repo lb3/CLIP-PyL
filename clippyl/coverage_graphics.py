@@ -13,9 +13,9 @@ from clippyl.mpl_graphics import hits_clip_plot
 
 #TODO: emulate bedgraph-dump behavior and make it default assume all adaper clipped
 #eg fix this (copied from below)
-    # 2. connect to the readid databases that hold the readids of the adapter 
-    #    clipped reads
-    #TODO: check for readid file extension and build new database if not found
+# 2. connect to the readid databases that hold the readids of the adapter 
+#    clipped reads
+#TODO: check for readid file extension and build new database if not found
 
 class Usage(Exception):
     def __init__(self, exitStat):
@@ -110,7 +110,7 @@ def hitsclip_graphics(  bam_fp_l,
         if fp.split('.')[-1] == 'sl3':
             ciselement_db_fh_l.append(Bed6SQLite(fp))
         else:
-            print('building ciselement db')
+            print('building ciselement db at:')
             print(fp)
             fh = Bed6SQLite(fp + '.sl3')
             fh.input_bed6(fp)
@@ -138,5 +138,6 @@ def hitsclip_graphics(  bam_fp_l,
         
         pp.savefig()
     pp.close()
+    
     return
 

@@ -74,8 +74,7 @@ class ReadidSQLite(SQLiteBase):
         print(in_fp)
         
         # validate the file format and read id format. this is necessary because
-        # the read id must be valid to ensure that the cluster coords will be 
-        # properly parsed
+        # the read id must be valid it will be properly parsed
         validate_fastq_file(in_fp)
         
         with FastqReader(in_fp) as fq_gen:

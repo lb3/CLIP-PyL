@@ -23,6 +23,7 @@ if __name__ == '__main__':
     #hitsclip_bg_dump(bam_fp_l_discardUnclipped,)
     
     hitsclip_bg_dump(bam_fp_l, readid_db_fp_l = readid_db_fp_l)
+#TODO: parameterize the normalization factor because histonly files do not contain all reads
 
 #import random
 #import unittest

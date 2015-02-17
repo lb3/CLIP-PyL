@@ -35,6 +35,9 @@ def main(argv=None):
             #bam_fp_l, required
             parser.add_argument('bam_files', nargs='+')
             
+            #option to explicity provide the number of MMR used for normalization
+            parser.add_argument('--n_mapped_reads_l', nargs='+')
+            
             #query_bed_fp, required
             parser.add_argument('-q', '--query', nargs='?')
             
@@ -58,6 +61,7 @@ def main(argv=None):
             
             if args.clipseq_method == 'hits-clip':
                 hitsclip_graphics(args.bam_files,
+                                  args.n_mapped_reads_l,
                                   args.cleav_files,
                                   args.query,
                                   args.ciselements,
@@ -76,7 +80,8 @@ def hitsclip_graphics(  bam_fp_l,
                         readid_db_fp_l,
                         query_bed_fp,
                         ciselement_bed_fp_l,
-                        out_pdf_fp ):
+                        out_pdf_fp,
+                        n_mapped_reads_l = None ):
     '''Batch graphics routine for hitsclip data'''
     
     # parse data labels from input bam file names
@@ -90,18 +95,23 @@ def hitsclip_graphics(  bam_fp_l,
     #    note: corresponding .bai files are assumed to be in the same directory
     bam_fh_l = [pysam.Samfile(fp, "rb") for fp in bam_fp_l]
     
-    # get the total number of mapped reads per million for each bam file.
-    # these values can be used as a normalizing factor
-    norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
+
+    if not n_mapped_reads_l:
+        # CLIP-PyL's default behavior is to get the total number of 
+        # mapped reads per million for each bam file.
+        # these values can be used as a normalizing factor. simply divide
+        # by million mapped reads in each file
+        norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
     
     # 2. connect to the readid databases that hold the readids of the adapter 
-    #    clipped reads
-    #TODO: check for readid file extension and build new database if not found
-    readid_db_fh_l = [ReadidSQLite(fp) for fp in readid_db_fp_l]
+    #    clipped reads. this is an optional kwarg upstream at the main CLI
+    if not readid_db_fp_l:
+        readid_db_fh_l = [ReadidSQLite(fp) for fp in readid_db_fp_l]
     
     # 3. load the bed file containing query intervals into a generator function
     bed_gen = Bed6Reader(query_bed_fp)
     
+    #TODO: make sure the None state is handled properly
     # 4. load the cis element interval database (sqlite3 file format)
     #    check if file has .sl3 file extension, if not then build sl3 db
     #    and connect to it
@@ -127,7 +137,7 @@ def hitsclip_graphics(  bam_fp_l,
         
         fig = hits_clip_plot(   bed_gen,
                                 bam_fh_l,
-                                readid_db_fh_l = readid_db_fh_l,
+                                readid_db_fh_l = readid_db_fh_l, #TODO: check default behavior for None
                                 label_l = label_l,
                                 norm_factor_l = norm_factor_l,
                                 ciselement_db_fh_l = ciselement_db_fh_l,

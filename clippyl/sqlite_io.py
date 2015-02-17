@@ -13,17 +13,16 @@ class SQLiteBase():
     A generic sqlite3 database interface.
     '''
     def __init__(self, fp):
+        #store filepath in class namespace for use in derived classes.
         self.fp = fp
         
         self.conn = None
-        #TODO: check for file and if it exists, warn of overwrite.
-        #(sqlite throws an error if the table already exists)
         self.conn = sqlite3.connect(fp)
         self.c = self.conn.cursor()
         self.c.execute('SELECT SQLITE_VERSION()')
         self.data = self.c.fetchone()
         print('Loaded SQLite database file at:')
-        print(fp)
+        print(self.fp)
         print('SQLite version: {0}'.format(str((self.data))))
         #TODO: print database structure (tables with # cols and rows)
     
@@ -65,16 +64,12 @@ class ReadidSQLite(SQLiteBase):
         """
         Create a SQLite database from the input fastq file.
         """
-        #TODO: does not overwrite existing table. you should catch the error and 
-        # warn user to delete the file, then quit.
-        #TODO: call get_connection
         
         print('...building the database of adapter-clipped reads')
-        print(' from the fastq file at:')
+        print('from the fastq file at:')
         print(in_fp)
         
-        # validate the file format and read id format. this is necessary because
-        # the read id must be valid it will be properly parsed
+        # validate the file format
         validate_fastq_file(in_fp)
         
         with FastqReader(in_fp) as fq_gen:
@@ -89,12 +84,20 @@ class ReadidSQLite(SQLiteBase):
                         print('{0} reads written'.format(str(stat_dict['readid_cnt'])))
                     yield t
             
-            self.c.execute('''CREATE TABLE read_coords(
-                                   lane INT not null, 
-                                   tile INT not null, 
-                                   x_coord INT not null, 
-                                   y_coord INT not null,
-                                   PRIMARY KEY(lane, tile, x_coord, y_coord))''')
+            try:
+                self.c.execute('''CREATE TABLE read_coords(
+                                       lane INT not null, 
+                                       tile INT not null, 
+                                       x_coord INT not null, 
+                                       y_coord INT not null,
+                                       PRIMARY KEY(lane, tile, x_coord, y_coord))''')
+            except sqlite3.OperationalError as e:
+                print('CLIP-PyL found an existing database file and will not')
+                print('overwrite. If you wish to build the database then')
+                print('you must delete the file at:')
+                print(self.fp)
+                raise e
+                
             
             sql_stmnt = '''INSERT INTO read_coords(lane, 
                                                    tile, 
@@ -103,11 +106,12 @@ class ReadidSQLite(SQLiteBase):
             
             try:
                 self.c.executemany(sql_stmnt, row_gen())
-            except sqlite3.IntegrityError:
-                #TODO: make the original error quit the program too
+            except sqlite3.IntegrityError as e:
+                print( 'CLIP-PyL encountered an error during key lookup.' )
                 print( fq_gen.d['TOPID'] )
-                print( fq_gen.get_cluster_coords() )
+                #print( fq_gen.get_cluster_coords() )
                 print( stat_dict['readid_cnt'] )
+                raise e
         
         self.conn.commit()
         self.conn.close()

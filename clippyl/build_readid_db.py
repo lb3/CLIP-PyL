@@ -18,9 +18,9 @@ def main(argv=None):
         try:
             
             # create the top-level parser
-            d = '''This is the CLI for clippyl's readid ''' + \
+            d = '''This is the CLI for clippyl's readid ''' +\
                 '''database builder.\nUse this tool to produce ''' +\
-                '''a clippyl-compatible databse containing ''' +\
+                '''a clippyl-compatible database containing ''' +\
                 '''the IDs of\nreads that contained adapter sequence ''' +\
                 '''and were clipped.'''
             parser = argparse.ArgumentParser(description=d)
@@ -28,8 +28,9 @@ def main(argv=None):
             #fastq files of adapter clipped-only reads; required
             parser.add_argument('fq_files', nargs='+')
             
-            #TODO: output directory argument
-             
+            #output directory
+            parser.add_argument('out_dir', nargs='?', const=None, default=None)
+            
             args = parser.parse_args()
             #print(args) #debugging
             
@@ -44,7 +45,7 @@ def main(argv=None):
     except Usage as err:
         return err.exitStat
 
-def build_ReadidSQLite_dbs(fp_l):
+def build_ReadidSQLite_dbs(fp_l, out_dir = None):
     """Build a ReadidSQLite database containing the 
     read IDs from a list of fastq files.
     """
@@ -54,15 +55,15 @@ def build_ReadidSQLite_dbs(fp_l):
     
     for in_fp in fp_l:
         
-        #determine output file name for the sqlite3 db
-        #TODO: parameterize out_directory
         # using directory where input files are found as default
         # NOTE: DEFAULT FILE INPUT IS GZIP
-        out_dir = os.path.dirname(in_fp)
-        file_name, file_ext = os.path.splitext(os.path.basename(in_fp))
-        out_db_fp = os.path.join(out_dir, file_name + '.readids')
-        print('readids will be written to:')
-        print(out_db_fp)
+        if not out_dir:
+            out_dir = os.path.dirname(in_fp)
+            file_name, file_ext = os.path.splitext(os.path.basename(in_fp))
+            out_db_fp = os.path.join(out_dir, file_name + '.readids')
+            print('readids will be written to:')
+            print(out_db_fp)
+        
         start_time = time.time()
         out_db_fh = ReadidSQLite(out_db_fp)
         n = out_db_fh.input_fastq(in_fp)

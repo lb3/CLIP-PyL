@@ -21,3 +21,4 @@ def hitsclip_discardUnclipped_fq_dir():
 def hitsclip_bam_dir():
     return os.path.join(get_data_dir(), 'HITS-CLIP_SLBP_histone_mRNA_01', 'bwa_samse_hg19')
 
+#TODO: make a clean-up test files command for files created by tests

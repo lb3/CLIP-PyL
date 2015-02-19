@@ -1,28 +1,27 @@
 """test bedgraph-dump on sample data"""
 import os
 
-from clippyl.sample_data.paths import hitsclip_bam_dir
-from clippyl.sample_data.paths import hitsclip_discardUnclipped_fq_dir
 from clippyl.bedgraph_dump import hitsclip_bg_dump
+from clippyl.sample_data.paths import (hitsclip_fq_fp_l,
+                                       hitsclip_cleav_db_l,
+                                       hitsclip_bam_fp_l_discardUnclipped,
+                                       hitsclip_bam_fp_l,
+                                       hitsclip_n_mapped_reads_l,
+                                      )
+
 
 if __name__ == '__main__':
-    # getting relevant filepaths lists
-    fp_l = os.listdir(hitsclip_bam_dir())
-    fp_l = [os.path.join(hitsclip_bam_dir(), fp) for fp in fp_l]
-    bam_fp_l = [fp for fp in fp_l if fp.split('.')[-1] == 'bam']
-    bam_fp_l_discardUnclipped = sorted([fp for fp in bam_fp_l if fp.split('.')[2] == 'discardUnclipped'])
-    bam_fp_l = sorted([fp for fp in bam_fp_l if fp.split('.')[2] != 'discardUnclipped'])
     
-    #NOTE: run test_build_readid_db must to generate readid databases
-    fp_l = os.listdir(hitsclip_discardUnclipped_fq_dir())
-    fp_l = [os.path.join(hitsclip_discardUnclipped_fq_dir(), fp) for fp in fp_l]
-    readid_db_fp_l = sorted([fp for fp in fp_l if fp.split('.')[-1] == 'readids'])
+    hitsclip_fq_fp_l()
+    hitsclip_cleav_db_l()
+    #TODO:check if build_readid will be called first during test discovery
+    #build_ReadidSQLite_dbs(fq_fp_l)
+    hitsclip_bam_fp_l_discardUnclipped()
+    hitsclip_bam_fp_l()
+    hitsclip_n_mapped_reads_l()
     
-    print (readid_db_fp_l)
-    
-    #hitsclip_bg_dump(bam_fp_l_discardUnclipped,)
-    
-    hitsclip_bg_dump(bam_fp_l, readid_db_fp_l = readid_db_fp_l)
+    hitsclip_bg_dump(hitsclip_fq_fp_l(),
+                     readid_db_fp_l = hitsclip_cleav_db_l())
 #TODO: parameterize the normalization factor because histonly files do not contain all reads
 
 #import random

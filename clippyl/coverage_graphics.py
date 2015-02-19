@@ -15,7 +15,8 @@ from clippyl.mpl_graphics import hits_clip_plot
 #eg fix this (copied from below)
 # 2. connect to the readid databases that hold the readids of the adapter 
 #    clipped reads
-#TODO: check for readid file extension and build new database if not found
+#TODO: check for readid file arguments and assume all adpater-clipped if not
+###### found. make cleavage plot off by default if not readid file is there
 
 class Usage(Exception):
     def __init__(self, exitStat):
@@ -35,6 +36,9 @@ def main(argv=None):
             #bam_fp_l, required
             parser.add_argument('bam_files', nargs='+')
             
+            #stranded
+            parser.add_argument('--not_stranded', action='store_true')
+            
             #option to explicity provide the number of MMR used for normalization
             parser.add_argument('--n_mapped_reads_l', nargs='+')
             
@@ -43,7 +47,7 @@ def main(argv=None):
             
             #readid_db_fp_l, (optional kwarg)
             #note: there must be one cleav_file per bam_file
-            parser.add_argument('--cleav_files', nargs='+')
+            parser.add_argument('--cleav_db', nargs='+')
             
             #ciselement_bed_fp_l
             parser.add_argument('-e', '--ciselements', nargs='+')
@@ -60,29 +64,35 @@ def main(argv=None):
             args = parser.parse_args()
             
             if args.clipseq_method == 'hits-clip':
-                hitsclip_graphics(args.bam_files,
-                                  args.n_mapped_reads_l,
-                                  args.cleav_files,
-                                  args.query,
-                                  args.ciselements,
-                                  args.output)
+                hitsclip_graphics(args)
             else:
                 #TODO: incorporate par-clip and iclip options
                 pass
             
+            print(args) #debugging
+        
         except SystemExit as exitStat:
             raise Usage(exitStat)
     
     except Usage as err:
         return err.exitStat
 
-def hitsclip_graphics(  bam_fp_l,
-                        readid_db_fp_l,
-                        query_bed_fp,
-                        ciselement_bed_fp_l,
-                        out_pdf_fp,
-                        n_mapped_reads_l = None ):
+def hitsclip_graphics( args ):
     '''Batch graphics routine for hitsclip data'''
+    
+    bam_fp_l = args.bam_files
+    not_stranded = args.not_stranded
+    n_mapped_reads_l = args.n_mapped_reads_l
+    readid_db_fp_l = args.cleav_db
+    query_bed_fp = args.query
+    ciselement_bed_fp_l = args.ciselements
+    out_pdf_fp = args.output
+    
+    if not_stranded:
+        stranded = False
+        print('PROCESSING AS NON-STRANDED AKA STRAND-AGNOSTIC LIBRARY')
+    else:
+        stranded = True
     
     # parse data labels from input bam file names
     def parse_label(filename):
@@ -95,7 +105,6 @@ def hitsclip_graphics(  bam_fp_l,
     #    note: corresponding .bai files are assumed to be in the same directory
     bam_fh_l = [pysam.Samfile(fp, "rb") for fp in bam_fp_l]
     
-
     if not n_mapped_reads_l:
         # CLIP-PyL's default behavior is to get the total number of 
         # mapped reads per million for each bam file.
@@ -115,25 +124,35 @@ def hitsclip_graphics(  bam_fp_l,
     # 4. load the cis element interval database (sqlite3 file format)
     #    check if file has .sl3 file extension, if not then build sl3 db
     #    and connect to it
-    ciselement_db_fh_l = []
-    for fp in ciselement_bed_fp_l:
-        if fp.split('.')[-1] == 'sl3':
-            ciselement_db_fh_l.append(Bed6SQLite(fp))
-        else:
-            print('building ciselement db at:')
-            print(fp)
-            fh = Bed6SQLite(fp + '.sl3')
-            fh.input_bed6(fp)
-            ciselement_db_fh_l.append(fh)
-    # collect user-defined cis element labels from params file
-    #TODO: parse this from input file names
-    ciselement_label_l = ['histone_SL', ]
+    if ciselement_bed_fp_l:
+        ciselement_db_fh_l = []
+        for fp in ciselement_bed_fp_l:
+            if fp.split('.')[-1] == 'sl3':
+                ciselement_db_fh_l.append(Bed6SQLite(fp))
+            else:
+                print('building ciselement db at:')
+                print(fp)
+                fh = Bed6SQLite(fp + '.sl3')
+                fh.input_bed6(fp)
+                ciselement_db_fh_l.append(fh)
+        # collect user-defined cis element labels from params file
+        #TODO: parse this from input file names
+        ciselement_label_l = ['histone_SL', ]
     
     # 5. load the graphics output file handle where plots will be aggregated
     # docs for multi-page pdf output: http://matplotlib.sourceforge.net/faq/howto_faq.html#save-multiple-plots-to-one-pdf-file
     pp = PdfPages(out_pdf_fp)
     
     for i in bed_gen:
+        
+        #debugging
+        print( bed_gen,
+               bam_fh_l,
+               readid_db_fh_l, #TODO: check default behavior for None
+               label_l,
+               norm_factor_l,
+               ciselement_db_fh_l,
+               ciselement_label_l )
         
         fig = hits_clip_plot(   bed_gen,
                                 bam_fh_l,
@@ -144,7 +163,7 @@ def hitsclip_graphics(  bam_fp_l,
                                 ciselement_label_l = ciselement_label_l,
                                 ciselement_color_l = None,
                                 flank = 100,
-                                stranded = True )
+                                stranded = stranded )
         
         pp.savefig()
     pp.close()

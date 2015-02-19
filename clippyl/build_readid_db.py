@@ -29,7 +29,7 @@ def main(argv=None):
             parser.add_argument('fq_files', nargs='+')
             
             #output directory
-            parser.add_argument('out_dir', nargs='?', const=None, default=None)
+            parser.add_argument('out_dir', nargs='?')
             
             args = parser.parse_args()
             #print(args) #debugging

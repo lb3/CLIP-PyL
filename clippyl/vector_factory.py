@@ -6,9 +6,7 @@ hitsclip_vectors_2_bg
 import pysam
 
 from clippyl.ome_dict_io import SiteTuple, OmeDict, dump2bg
-from clippyl.pysam_cbs import (fetch_hitsclip_dict, 
-                               fetch_iclip_dict, 
-                               fetch_parclip_dict)
+from clippyl.pysam_cbs import fetch_hitsclip_dict
 
 class build_hitsclip_vectors():
     '''Generate basewise counts for 1D, cleavage and raw coverage from the 

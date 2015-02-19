@@ -92,12 +92,12 @@ class ReadidSQLite(SQLiteBase):
                                        y_coord INT not null,
                                        PRIMARY KEY(lane, tile, x_coord, y_coord))''')
             except sqlite3.OperationalError as e:
+                print('############CLIP-PyL ERROR###########################')
                 print('CLIP-PyL found an existing database file and will not')
                 print('overwrite. If you wish to build the database then')
                 print('you must delete the file at:')
                 print(self.fp)
                 raise e
-                
             
             sql_stmnt = '''INSERT INTO read_coords(lane, 
                                                    tile, 

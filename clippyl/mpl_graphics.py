@@ -192,35 +192,37 @@ def hits_clip_plot(   bed_gen,
               transform=legend_ax.transAxes, 
               bbox=dict() )
     
-    if not ciselement_color_l:
-        ciselement_color_l = ['g', ] * len(ciselement_db_fh_l)
-    
-    # check for motif intersect
-    for db_fh, label, color in zip(ciselement_db_fh_l, 
-                                   ciselement_label_l, 
-                                   ciselement_color_l):
+    if ciselement_db_fh_l:
         
-        l = db_fh.ome_coord_lookup( ome_coords )
-        if l:
-            print('cis-element intersection detected') #debugging
-            for ref, start, end, name, score, strand in l:
-                ce_vspan_start = start - bed_d['graph_start']
-                ce_vspan_end = end - bed_d['graph_start']
-                if ce_vspan_start < 0:
-                    # the motif is only partially overlapping
-                    ce_vspan_start = 0
-                if ce_vspan_end > x_axis_len:
-                    # the motif is only partially overlapping
-                    ce_vspan_end = x_axis_len
-                
-                #make sure everything is in the same orientation
-                if bed_d['strand'] == '-':
-                    i = len(raw_cover_l) - ce_vspan_end
-                    j = len(raw_cover_l) - ce_vspan_start
-                else:
-                    i = ce_vspan_start
-                    j = ce_vspan_end
-                raw_ax.axvspan(i, j, alpha=0.25, facecolor = color)
+        if not ciselement_color_l:
+            ciselement_color_l = ['g', ] * len(ciselement_db_fh_l)
+        
+        # check for motif intersect
+        for db_fh, label, color in zip(ciselement_db_fh_l, 
+                                       ciselement_label_l, 
+                                       ciselement_color_l):
+            
+            l = db_fh.ome_coord_lookup( ome_coords )
+            if l:
+                print('cis-element intersection detected') #debugging
+                for ref, start, end, name, score, strand in l:
+                    ce_vspan_start = start - bed_d['graph_start']
+                    ce_vspan_end = end - bed_d['graph_start']
+                    if ce_vspan_start < 0:
+                        # the motif is only partially overlapping
+                        ce_vspan_start = 0
+                    if ce_vspan_end > x_axis_len:
+                        # the motif is only partially overlapping
+                        ce_vspan_end = x_axis_len
+                    
+                    #make sure everything is in the same orientation
+                    if bed_d['strand'] == '-':
+                        i = len(raw_cover_l) - ce_vspan_end
+                        j = len(raw_cover_l) - ce_vspan_start
+                    else:
+                        i = ce_vspan_start
+                        j = ce_vspan_end
+                    raw_ax.axvspan(i, j, alpha=0.25, facecolor = color)
     
     return fig
 

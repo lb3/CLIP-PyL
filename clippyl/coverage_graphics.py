@@ -28,22 +28,21 @@ def main(argv=None):
     try:
         try:
             
-            #TODO: provide list of possible functions
             # create the top-level parser
             d = '''This is the CLI for generating coverage graphics using clippyl'''
             parser = argparse.ArgumentParser(description=d)
             
             #bam_fp_l, required
-            parser.add_argument('bam_files', nargs='+')
+            parser.add_argument('-i', '--input_bam_files', nargs='+', required=True)
+            
+            #query_bed_fp, required
+            parser.add_argument('-q','--query_bed_file', nargs='?', required=True)
             
             #stranded
             parser.add_argument('--not_stranded', action='store_true')
             
             #option to explicity provide the number of MMR used for normalization
             parser.add_argument('--n_mapped_reads_l', nargs='+')
-            
-            #query_bed_fp, required
-            parser.add_argument('-q', '--query', nargs='?')
             
             #readid_db_fp_l, (optional kwarg)
             #note: there must be one cleav_file per bam_file
@@ -61,7 +60,7 @@ def main(argv=None):
                                 default='hits-clip')
             
             # parse the args and call whatever function was selected
-            args = parser.parse_args()
+            args = parser.parse_args(argv)
             
             if args.clipseq_method == 'hits-clip':
                 hitsclip_graphics(args)
@@ -80,13 +79,19 @@ def main(argv=None):
 def hitsclip_graphics( args ):
     '''Batch graphics routine for hitsclip data'''
     
-    bam_fp_l = args.bam_files
+    print(args)
+    
+    bam_fp_l = args.input_bam_files
     not_stranded = args.not_stranded
     n_mapped_reads_l = args.n_mapped_reads_l
     readid_db_fp_l = args.cleav_db
-    query_bed_fp = args.query
+    query_bed_fp = args.query_bed_file
     ciselement_bed_fp_l = args.ciselements
     out_pdf_fp = args.output
+    
+    if not out_pdf_fp:
+        #print('pwd', os.getcwd()) #debugging
+        out_pdf_fp = os.path.join(os.getcwd(), 'CLIP-PyL_coverage_graphics.pdf')
     
     if not_stranded:
         stranded = False
@@ -98,6 +103,8 @@ def hitsclip_graphics( args ):
     def parse_label(filename):
         return filename.split('.')[0]
     
+    print('bamfpl')
+    print(bam_fp_l)
     label_l = [parse_label(os.path.basename(fp)) for fp in bam_fp_l]
     
     # pass file handles (fh) to the plotting routine
@@ -112,16 +119,19 @@ def hitsclip_graphics( args ):
         # by million mapped reads in each file
         norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
     
-    # 2. connect to the readid databases that hold the readids of the adapter 
+    # 2. OPTIONAL
+    #    connect to the readid databases that hold the readids of the adapter 
     #    clipped reads. this is an optional kwarg upstream at the main CLI
-    if not readid_db_fp_l:
+    if readid_db_fp_l:
         readid_db_fh_l = [ReadidSQLite(fp) for fp in readid_db_fp_l]
+    else:
+        readid_db_fh_l = None
     
     # 3. load the bed file containing query intervals into a generator function
     bed_gen = Bed6Reader(query_bed_fp)
     
-    #TODO: make sure the None state is handled properly
-    # 4. load the cis element interval database (sqlite3 file format)
+    # 4. OPTIONAL
+    #    load the cis element interval database (sqlite3 file format)
     #    check if file has .sl3 file extension, if not then build sl3 db
     #    and connect to it
     if ciselement_bed_fp_l:
@@ -138,9 +148,13 @@ def hitsclip_graphics( args ):
         # collect user-defined cis element labels from params file
         #TODO: parse this from input file names
         ciselement_label_l = ['histone_SL', ]
+    else:
+        ciselement_db_fh_l = None
+        ciselement_label_l = None
     
     # 5. load the graphics output file handle where plots will be aggregated
     # docs for multi-page pdf output: http://matplotlib.sourceforge.net/faq/howto_faq.html#save-multiple-plots-to-one-pdf-file
+    #with open(out_pdf_fp, 'w') as out_pdf_fh:
     pp = PdfPages(out_pdf_fp)
     
     for i in bed_gen:

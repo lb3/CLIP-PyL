@@ -3,8 +3,6 @@
 import gzip
 import io
 import re
-#from bioPyL.bioUtils.compareCoords import getOverlap
-#from bioPyL.bioFileRW.bedO import bed12_reader
 
 #TODO: FIX FASTQREADER __init__ so that the program
 # exits gracefully if a bad fp is passed
@@ -152,6 +150,7 @@ def validate_fastq_file(fp):
         else:
             return False
 
+#TODO: Remove this class because all work is done by pysam now?
 #TODO:Rename this class to bwa-sam? because all method work on BWA-derived Sam files.
 class SamReader():
     """
@@ -604,7 +603,7 @@ class Bed6Reader():
             self.bedline = self.fh.readline()
         except IOError as ioerr:
             print("{} not found".format(in_bed_fp))
-            #TODO: reraise the error so it quits
+            raise ioerr
     
     def __enter__(self):
         return self
@@ -633,6 +632,7 @@ class Bed6Reader():
         except ValueError:
             self.bedline = None
             return self.d
+        
         return self.d
     
     def calc_graph_limits(self, flank_size = 0):

@@ -15,14 +15,19 @@ from clippyl.sample_data.paths import (hitsclip_fq_fp_l,
 
 if __name__ == '__main__':
     
-    main(argv=['-h'])
-    
-    argv=['-i',]
-    argv.extend(hitsclip_bam_fp_l())
-    argv.extend(['-q', histone_gene_bed_fp()])
-    print('argv', argv)
+    #assume that all reads are adapter-clipped
+    argv=['-i',] + hitsclip_bam_fp_l_discardUnclipped() + \
+         ['--norm'] + hitsclip_n_mapped_reads_l + \
+         ['-q', histone_gene_bed_fp(), 
+          '-e', histone_sl_bed_fp]
+    #print('argv', argv)
     main(argv=argv)
     
+    argv=['-i',] + hitsclip_bam_fp_l() + \
+         ['',] + hitsclip_cleav_db_l + \
+         ['-q', histone_gene_bed_fp(), 
+          '-e', histone_sl_bed_fp]
+    main(
 #    hitsclip_fq_fp_l()
 #    hitsclip_cleav_db_l()
 #    #TODO:check if build_readid will be called first during test discovery
@@ -33,5 +38,5 @@ if __name__ == '__main__':
 #    histone_gene_bed_fp()
 #    histone_sl_bed_fp()
 #    histone_sl_bed_sl3_fp()
-#    #hitsclip_graphics(
+#    #hitsclip_graphics()
 

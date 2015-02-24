@@ -42,7 +42,7 @@ def main(argv=None):
             parser.add_argument('--not_stranded', action='store_true')
             
             #option to explicity provide the number of MMR used for normalization
-            parser.add_argument('--n_mapped_reads_l', nargs='+')
+            parser.add_argument('--norm', nargs='+')
             
             #readid_db_fp_l, (optional kwarg)
             #note: there must be one cleav_file per bam_file
@@ -83,7 +83,7 @@ def hitsclip_graphics( args ):
     
     bam_fp_l = args.input_bam_files
     not_stranded = args.not_stranded
-    n_mapped_reads_l = args.n_mapped_reads_l
+    norm = args.norm
     readid_db_fp_l = args.cleav_db
     query_bed_fp = args.query_bed_file
     ciselement_bed_fp_l = args.ciselements
@@ -112,12 +112,23 @@ def hitsclip_graphics( args ):
     #    note: corresponding .bai files are assumed to be in the same directory
     bam_fh_l = [pysam.Samfile(fp, "rb") for fp in bam_fp_l]
     
-    if not n_mapped_reads_l:
-        # CLIP-PyL's default behavior is to get the total number of 
-        # mapped reads per million for each bam file.
-        # these values can be used as a normalizing factor. simply divide
-        # by million mapped reads in each file
+    #TODO:document these options above and/or move this into the top part
+    if not norm:
+        #TODO: make default behaviour with None state to give unnormalized data
+    elif norm == ['MMR']:
+        #TODO:build new command arg that invokes use of MMR for normalizing factor
+        # Get the total number of mapped reads per million for each bam file
+        # and use those values as the normalizing factors (the read counts 
+        # will be divided by million mapped reads in each file
         norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
+    elif len(norm) == len(bam_fh_l):
+        try:
+            norm_factor_l = [int(s)/1000000 for s in norm]
+        except Usage as err:
+            return err.exitStat
+    else:
+        print('CLIP-PyL Error: malformed norm argument.')
+        raise Usage
     
     # 2. OPTIONAL
     #    connect to the readid databases that hold the readids of the adapter 

@@ -41,8 +41,10 @@ def main(argv=None):
             #stranded
             parser.add_argument('--not_stranded', action='store_true')
             
-            #option to explicity provide the number of MMR used for normalization
-            parser.add_argument('--norm', nargs='+')
+            #mutually exclusive options allow user to choose a normalization mode
+            group = parser.add_mutually_exclusive_group()
+            group.add_argument('--n_mapped_reads', nargs='+', type=int)
+            group.add_argument('--auto_norm', action='store_true')
             
             #readid_db_fp_l, (optional kwarg)
             #note: there must be one cleav_file per bam_file
@@ -112,39 +114,35 @@ def hitsclip_graphics( args ):
     #    note: corresponding .bai files are assumed to be in the same directory
     bam_fh_l = [pysam.Samfile(fp, "rb") for fp in bam_fp_l]
     
-    #TODO:document these options above and/or move this into the top part
-    if not norm:
-        #TODO: make default behaviour with None state to give unnormalized data
-    elif norm == ['MMR']:
-        #TODO:build new command arg that invokes use of MMR for normalizing factor
+    # OPTIONAL
+    # mutually exclusive with options for normaliztion
+    if auto_norm:
         # Get the total number of mapped reads per million for each bam file
         # and use those values as the normalizing factors (the read counts 
         # will be divided by million mapped reads in each file
         norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
-    elif len(norm) == len(bam_fh_l):
-        try:
+        
+    elif n_mapped_reads:
             norm_factor_l = [int(s)/1000000 for s in norm]
-        except Usage as err:
-            return err.exitStat
+        
     else:
-        print('CLIP-PyL Error: malformed norm argument.')
-        raise Usage
+        norm_factor_l = None
     
-    # 2. OPTIONAL
-    #    connect to the readid databases that hold the readids of the adapter 
-    #    clipped reads. this is an optional kwarg upstream at the main CLI
+    # OPTIONAL
+    # connect to the readid databases that hold the readids of the adapter 
+    # clipped reads. this is an optional kwarg upstream at the main CLI
     if readid_db_fp_l:
         readid_db_fh_l = [ReadidSQLite(fp) for fp in readid_db_fp_l]
     else:
         readid_db_fh_l = None
     
-    # 3. load the bed file containing query intervals into a generator function
+    # load the bed file containing query intervals into a generator function
     bed_gen = Bed6Reader(query_bed_fp)
     
-    # 4. OPTIONAL
-    #    load the cis element interval database (sqlite3 file format)
-    #    check if file has .sl3 file extension, if not then build sl3 db
-    #    and connect to it
+    # OPTIONAL
+    # load the cis element interval database (sqlite3 file format)
+    # check if file has .sl3 file extension, if not then build sl3 db
+    # and connect to it
     if ciselement_bed_fp_l:
         ciselement_db_fh_l = []
         for fp in ciselement_bed_fp_l:
@@ -163,9 +161,9 @@ def hitsclip_graphics( args ):
         ciselement_db_fh_l = None
         ciselement_label_l = None
     
-    # 5. load the graphics output file handle where plots will be aggregated
-    # docs for multi-page pdf output: http://matplotlib.sourceforge.net/faq/howto_faq.html#save-multiple-plots-to-one-pdf-file
-    #with open(out_pdf_fp, 'w') as out_pdf_fh:
+    # load the graphics output file handle where plots will be aggregated
+    # docs for multi-page pdf output found here: 
+    # http://matplotlib.sourceforge.net/faq/howto_faq.html#save-multiple-plots-to-one-pdf-file
     pp = PdfPages(out_pdf_fp)
     
     for i in bed_gen:
@@ -173,7 +171,7 @@ def hitsclip_graphics( args ):
         #debugging
         print( bed_gen,
                bam_fh_l,
-               readid_db_fh_l, #TODO: check default behavior for None
+               readid_db_fh_l,
                label_l,
                norm_factor_l,
                ciselement_db_fh_l,
@@ -181,7 +179,7 @@ def hitsclip_graphics( args ):
         
         fig = hits_clip_plot(   bed_gen,
                                 bam_fh_l,
-                                readid_db_fh_l = readid_db_fh_l, #TODO: check default behavior for None
+                                readid_db_fh_l = readid_db_fh_l,
                                 label_l = label_l,
                                 norm_factor_l = norm_factor_l,
                                 ciselement_db_fh_l = ciselement_db_fh_l,

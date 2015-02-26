@@ -58,9 +58,12 @@ def build_ReadidSQLite_dbs(fp_l, out_dir = None):
         # using directory where input files are found as default
         # NOTE: DEFAULT FILE INPUT IS GZIP
         if not out_dir:
-            out_dir = os.path.dirname(in_fp)
             file_name, file_ext = os.path.splitext(os.path.basename(in_fp))
-            out_db_fp = os.path.join(out_dir, file_name + '.readids')
+            out_db_fp = os.path.join(os.path.dirname(in_fp), file_name + '.readids')
+            print('readids will be written to:')
+            print(out_db_fp)
+        else:
+            out_db_fp = os.path.join(os.path.dirname(out_dir), file_name + '.readids')
             print('readids will be written to:')
             print(out_db_fp)
         
@@ -68,7 +71,6 @@ def build_ReadidSQLite_dbs(fp_l, out_dir = None):
         out_db_fh = ReadidSQLite(out_db_fp)
         n = out_db_fh.input_fastq(in_fp)
         elapsed_time = time.time() - start_time
-        print()
         print('The amount of time that elapsed during the process was:')
         print('{0:.2f}'.format(round(elapsed_time,2)) + ' seconds')
         print('The number of reads that were processed is:')

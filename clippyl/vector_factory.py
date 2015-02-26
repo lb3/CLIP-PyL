@@ -110,7 +110,7 @@ class build_hitsclip_vectors():
                     pass
             else:
                 #No clipped read database provided, therefore, assuming that 
-                #all reads are adapter-clipped
+                #all reads are assumed to be adapter-clipped
                 
                 #add left cleavage site
                 left_terminus_st = SiteTuple(reference,

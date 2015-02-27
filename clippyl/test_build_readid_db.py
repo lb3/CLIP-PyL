@@ -4,7 +4,7 @@ import unittest
 from clippyl.build_readid_db import build_ReadidSQLite_dbs
 from clippyl.sample_data.paths import hitsclip_discardUnclipped_fq_dir
 
-class BuildReaidDBTestCase(unittest.TestCase):
+class BuildReadidDBTestCase(unittest.TestCase):
     
     def runTest(self):
         # getting relevant sample data filepaths
@@ -36,6 +36,8 @@ class BuildReaidDBTestCase(unittest.TestCase):
                          '\n'.join(readids_db_fn_l)))
         
         return
+
+#NOTE: run clippyl.sample_data.paths.remove_test_files to remove these files
 
 if __name__ == '__main__':
     unittest.main()

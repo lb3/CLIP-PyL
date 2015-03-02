@@ -17,17 +17,17 @@ if __name__ == '__main__':
     
     #assume that all reads are adapter-clipped
     argv=['-i',] + hitsclip_bam_fp_l_discardUnclipped() + \
-         ['--norm'] + hitsclip_n_mapped_reads_l + \
+         ['--n_mapped_reads'] + hitsclip_n_mapped_reads_l(out_type='string') + \
          ['-q', histone_gene_bed_fp(), 
-          '-e', histone_sl_bed_fp]
-    #print('argv', argv)
+          '-e', histone_sl_bed_fp()]
+    #print('argv:', argv) #debugging
     main(argv=argv)
     
-    argv=['-i',] + hitsclip_bam_fp_l() + \
-         ['',] + hitsclip_cleav_db_l + \
-         ['-q', histone_gene_bed_fp(), 
-          '-e', histone_sl_bed_fp]
-    main(
+#    argv=['-i',] + hitsclip_bam_fp_l() + \
+#         ['',] + hitsclip_cleav_db_l + \
+#         ['-q', histone_gene_bed_fp(), 
+#          '-e', histone_sl_bed_fp]
+#    main(
 #    hitsclip_fq_fp_l()
 #    hitsclip_cleav_db_l()
 #    #TODO:check if build_readid will be called first during test discovery

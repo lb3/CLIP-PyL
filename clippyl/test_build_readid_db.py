@@ -1,7 +1,8 @@
 import os
 import unittest
 
-from clippyl.build_readid_db import build_ReadidSQLite_dbs
+#TODO: call main instead (see test_coverage_vector for template)
+from clippyl.build_readid_db import main
 from clippyl.sample_data.paths import hitsclip_discardUnclipped_fq_dir
 
 class BuildReadidDBTestCase(unittest.TestCase):
@@ -13,7 +14,7 @@ class BuildReadidDBTestCase(unittest.TestCase):
         fq_fp_l = [fp for fp in fp_l if fp.split('.')[-2:] == ['fq','gz']]
         print (fq_fp_l)
         
-        build_ReadidSQLite_dbs(fq_fp_l)
+        main(argv = fq_fp_l)
         
         # list the .readids files in the output directory
         readids_db_fn_l = os.listdir(hitsclip_discardUnclipped_fq_dir())
@@ -38,6 +39,8 @@ class BuildReadidDBTestCase(unittest.TestCase):
         return
 
 #NOTE: run clippyl.sample_data.paths.remove_test_files to remove these files
+#from clippyl.sample_data.paths import remove_test_files
+#remove_test_files()
 
 if __name__ == '__main__':
     unittest.main()

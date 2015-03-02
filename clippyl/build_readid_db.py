@@ -5,7 +5,6 @@ import time
 
 from clippyl.sqlite_io import ReadidSQLite
 
-
 class Usage(Exception):
     def __init__(self, exitStat):
         self.exitStat = exitStat
@@ -13,10 +12,8 @@ class Usage(Exception):
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    
     try:
         try:
-            
             # create the top-level parser
             d = '''This is the CLI for clippyl's readid ''' +\
                 '''database builder.\nUse this tool to produce ''' +\
@@ -29,15 +26,15 @@ def main(argv=None):
             parser.add_argument('fq_files', nargs='+')
             
             #output directory
-            parser.add_argument('out_dir', nargs='?')
+            parser.add_argument('--out_dir', nargs='?')
             
-            args = parser.parse_args()
+            args = parser.parse_args(argv)
             #print(args) #debugging
             
             #TODO: allow argparse from argument file
             #https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
             
-            build_cleaved_read_db(args.fq_files)
+            build_ReadidSQLite_dbs(args)
         
         except SystemExit as exitStat:
             raise Usage(exitStat)
@@ -45,10 +42,14 @@ def main(argv=None):
     except Usage as err:
         return err.exitStat
 
-def build_ReadidSQLite_dbs(fp_l, out_dir = None):
+def build_ReadidSQLite_dbs(args):
     """Build a ReadidSQLite database containing the 
     read IDs from a list of fastq files.
     """
+    
+    print(args) #debugging
+    fp_l = args.fq_files
+    out_dir = args.out_dir
     
     print('#######################################')
     print('extracting readids from fastq file')

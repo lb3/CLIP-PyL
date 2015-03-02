@@ -2,7 +2,10 @@
 import os
 import unittest
 
-from clippyl.bedgraph_dump import hitsclip_bg_dump
+#TODO:check if build_readid will be called first during test discovery
+#build_ReadidSQLite_dbs(fq_fp_l)
+#TODO: call main instead (see test_coverage_vector for template)
+from clippyl.bedgraph_dump import main
 from clippyl.sample_data.paths import (hitsclip_fq_fp_l,
                                        hitsclip_cleav_db_l,
                                        hitsclip_bam_fp_l_discardUnclipped,
@@ -15,12 +18,10 @@ class BedgraphDumpTestCase(unittest.TestCase):
     
     def runTest(self):
         
-        
-        #TODO:check if build_readid will be called first during test discovery
-        #build_ReadidSQLite_dbs(fq_fp_l)
-        hitsclip_bg_dump(hitsclip_bam_fp_l(),
-                         readid_db_fp_l = hitsclip_cleav_db_l())
-        #TODO: parameterize the normalization factor because histonly files do not contain all reads
+        argv = hitsclip_bam_fp_l() + \
+               ['--discardUnclipped_db'] + hitsclip_cleav_db_l()
+        print(argv) #debugging
+        main(argv = argv)
         
         # list the .readids files in the output directory
         bg_fn_l = os.listdir(hitsclip_bam_dir())
@@ -76,6 +77,8 @@ class BedgraphDumpTestCase(unittest.TestCase):
         return
 
 #NOTE: run clippyl.sample_data.paths.remove_test_files to remove these files
+#from clippyl.sample_data.paths import remove_test_files
+#remove_test_files()
 
 if __name__ == '__main__':
     unittest.main()

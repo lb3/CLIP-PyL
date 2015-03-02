@@ -37,6 +37,9 @@ def main(argv=None):
             parser.add_argument('--discardUnclipped_db', nargs='+', 
                                 default=None)
             
+            #TODO: parameterize the normalization factor because clippedonly 
+            #      and histonly files do not contain all reads
+            
             #only hits-clip is currently supported (optional kwarg)
             #TODO: incorporate code for par-clip and iclip
             parser.add_argument('--clipseq_method', choices=['hits-clip',],
@@ -46,12 +49,11 @@ def main(argv=None):
             #https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
             
             # parse the args
-            args = parser.parse_args()
+            args = parser.parse_args(argv)
             #print(args) #debugging
             
             if args.clipseq_method == 'hits-clip':
-                hitsclip_bg_dump(bam_fp_l = args.bam,
-                                  readid_db_fp_l = args.discardUnclipped_db,)
+                hitsclip_bg_dump(args)
             else:
                 #TODO: incorporate par-clip and iclip options
                 pass
@@ -62,11 +64,11 @@ def main(argv=None):
     except Usage as err:
         return err.exitStat
 
-def hitsclip_bg_dump( bam_fp_l,
-                      readid_db_fp_l = None,
-                      ):
+def hitsclip_bg_dump(args):
+    '''Dump hitsclip coverage values to bedgraph files'''
     
-    """Dump hitsclip coverage values to bedgraph files"""
+    bam_fp_l = args.bam
+    readid_db_fp_l = args.discardUnclipped_db
     
     if not readid_db_fp_l:
         readid_db_fp_l = [None,] * len(bam_fp_l)

@@ -96,18 +96,30 @@ def hitsclip_bam_fp_l():
     # 'mock_CLIP_low_MW_high_MNase.HISTONLY.bam']
     return bam_fp_l
 
-def hitsclip_n_mapped_reads_l():
+def hitsclip_n_mapped_reads_l(out_type='integer'):
     # the normalization factor is parameterized because user sometimes 
     # wants to evaluate a subsetted bam file but also desires normalization by
     # the total number of mapped reads from the upstream bam file
     # e.g. the HISTONLY files are subsetted and do not contain all reads
-    n_mapped_reads_l = [17931502, #SLBP_CLIP_high_MW_high_MNase.bam
-                        14698879, #SLBP_CLIP_high_MW_low_MNase.bam
-                        20020463, #SLBP_CLIP_low_MW_high_MNase.bam
-                        15256431, #SLBP_CLIP_low_MW_low_MNase.bam
-                        18992515, #mock_CLIP_high_MW_high_MNase.bam
-                        21083226, #mock_CLIP_low_MW_high_MNase.bam
-                       ]
+    
+    if out_type == 'integer':
+        n_mapped_reads_l = [17931502, #SLBP_CLIP_high_MW_high_MNase.bam
+                            14698879, #SLBP_CLIP_high_MW_low_MNase.bam
+                            20020463, #SLBP_CLIP_low_MW_high_MNase.bam
+                            15256431, #SLBP_CLIP_low_MW_low_MNase.bam
+                            18992515, #mock_CLIP_high_MW_high_MNase.bam
+                            21083226, #mock_CLIP_low_MW_high_MNase.bam
+                           ]
+    
+    elif out_type == 'string':
+        n_mapped_reads_l = ['17931502', #SLBP_CLIP_high_MW_high_MNase.bam
+                            '14698879', #SLBP_CLIP_high_MW_low_MNase.bam
+                            '20020463', #SLBP_CLIP_low_MW_high_MNase.bam
+                            '15256431', #SLBP_CLIP_low_MW_low_MNase.bam
+                            '18992515', #mock_CLIP_high_MW_high_MNase.bam
+                            '21083226', #mock_CLIP_low_MW_high_MNase.bam
+                           ]
+    
     return n_mapped_reads_l
 
 def remove_test_files():

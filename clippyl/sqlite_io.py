@@ -136,18 +136,24 @@ class ReadidSQLite(SQLiteBase):
 class Bed6SQLite(SQLiteBase):
     
     def input_bed6(self, fp):
-        
-        self.c.execute('''CREATE TABLE bed6_intervals
-                             (
-                                ref TEXT, 
-                                start INT, 
-                                end INT, 
-                                name TEXT, 
-                                score INT, 
-                                strand TEXT, 
-                                PRIMARY KEY(strand, ref, start, end)
-                             )''')
-        
+        try:
+            self.c.execute('''CREATE TABLE bed6_intervals
+                                 (
+                                    ref TEXT, 
+                                    start INT, 
+                                    end INT, 
+                                    name TEXT, 
+                                    score INT, 
+                                    strand TEXT, 
+                                    PRIMARY KEY(strand, ref, start, end)
+                                 )''')
+        except sqlite3.OperationalError as e:
+                print('############CLIP-PyL ERROR###########################')
+                print('CLIP-PyL found an existing database file and will not')
+                print('overwrite. If you wish to build the database then')
+                print('you must delete the file at:')
+                print(self.fp)
+                raise e
         stat_dict = {}
         stat_dict['n_of_intervals'] = 0 #total number of intervals
         

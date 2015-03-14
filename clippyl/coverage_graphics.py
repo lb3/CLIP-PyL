@@ -47,8 +47,8 @@ def main(argv=None):
             group.add_argument('--auto_norm', action='store_true')
             
             #readid_db_fp_l, (optional kwarg)
-            #note: there must be one cleav_file per bam_file
-            parser.add_argument('--cleav_db', nargs='+')
+            #note: there must be one discardUnclipped_db per bam_file
+            parser.add_argument('--discardUnclipped_db', nargs='+')
             
             #ciselement_bed_fp_l
             parser.add_argument('-e', '--ciselements', nargs='+')
@@ -85,8 +85,10 @@ def hitsclip_graphics( args ):
     
     bam_fp_l = args.input_bam_files
     not_stranded = args.not_stranded
-    norm = args.norm
-    readid_db_fp_l = args.cleav_db
+    #TODO: insert n_mapped_reads attribute and check that None state is handled
+    n_mapped_reads= args.n_mapped_reads
+    auto_norm = args.auto_norm
+    readid_db_fp_l = args.discardUnclipped_db
     query_bed_fp = args.query_bed_file
     ciselement_bed_fp_l = args.ciselements
     out_pdf_fp = args.output
@@ -121,10 +123,10 @@ def hitsclip_graphics( args ):
         # and use those values as the normalizing factors (the read counts 
         # will be divided by million mapped reads in each file
         norm_factor_l = [bam_fh.mapped/1000000  for bam_fh in bam_fh_l]
-        
     elif n_mapped_reads:
-            norm_factor_l = [int(s)/1000000 for s in norm]
-        
+            for i in n_mapped_reads: #debugging
+                assert type(i) == int #debugging
+            norm_factor_l = [int(i)/1000000 for i in n_mapped_reads]
     else:
         norm_factor_l = None
     

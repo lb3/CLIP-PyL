@@ -2,19 +2,16 @@
 #TODO: what documentation goes here?
 import unittest
 
-from clippyl.test_build_readid_db import BuildReadidDBTestCase
-from clippyl.test_bedgraph_dump import BedgraphDumpTestCase
-from clippyl.test_coverage_graphics import CoverageGraphicsTestCase
+from clippyl.test_bedgraph_dump import BG_Dump_Basic_TC
+from clippyl.test_coverage_graphics import Coverage_Graphics_Basic_TC
 
-#TODO: define a unittest test suite to guide test discovery
-#load_tests
-#make sure that build_readid will be called first during test discovery
-#build_ReadidSQLite_dbs(fq_fp_l)
+# only the most basic functionality of clippyl is tested here
+# run the individual test_* modules for more comprehensive
+# tests that include the readid db and cis element sl3 feature
 
 #docs: https://docs.python.org/3/library/unittest.html#load-tests-protocol
-test_cases = (BuildReadidDBTestCase, 
-              BedgraphDumpTestCase, 
-              CoverageGraphicsTestCase)
+test_cases = (BG_Dump_Basic_TC, 
+              Coverage_Graphics_Basic_TC)
 
 def load_tests(loader, tests, pattern):
     suite = unittest.TestSuite()

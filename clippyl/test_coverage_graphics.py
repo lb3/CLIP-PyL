@@ -14,6 +14,19 @@ from clippyl.sample_data.paths import (hitsclip_fq_fp_l,
                                        histone_sl_bed_sl3_fp
                                       )
 
+class Coverage_Graphics_Basic_TC(unittest.TestCase):
+    
+    def test_coverage_graphics(self):
+        # generate coverage graphics for adapter-clipped reads
+        argv=['-i',] + hitsclip_bam_fp_l_discardUnclipped() + \
+             ['--n_mapped_reads'] + hitsclip_n_mapped_reads_l(out_type='string') + \
+             ['-q', histone_gene_bed_fp(), 
+              '--output', 'CLIP-PyL_graphics_test.pdf']
+        #print('argv:', argv) #debugging
+        main(argv=argv)
+        
+        return
+
 class CoverageGraphicsTestCase(unittest.TestCase):
     
     def test_coverage_graphics(self):

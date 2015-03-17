@@ -1,11 +1,19 @@
 import pysam
 import math
 
-from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
-from clippyl.vector_factory import build_hitsclip_vectors
+from matplotlib import rcParams
 import matplotlib.pyplot as plt
+#import matplotlib.font_manager as mpl_font
 from matplotlib import ticker
 from matplotlib.backends.backend_pdf import PdfPages
+
+from clippyl.sqlite_io import ReadidSQLite, Bed6SQLite
+from clippyl.vector_factory import build_hitsclip_vectors
+
+rcParams['font.size'] = 12
+rcParams['legend.fontsize'] = 12
+#alternative font configuration option:
+#http://matplotlib.org/api/font_manager_api.html
 
 def hits_clip_plot(   bed_gen,
                       bam_fh_l,
@@ -21,12 +29,15 @@ def hits_clip_plot(   bed_gen,
                       rate_cutoff = 15,
                       cleav_rate_mode = False,
                       stranded = True):
-    '''
-    writeme
-    '''
     
     # Instantiate figure instance that will hold multiple axes objects
     fig = plt.figure(figsize=(11,8.5))
+    # axes objects that will be instantiated:
+    #cleav_ax
+    #oneD_ax
+    #raw_ax
+    #q_region_ax
+    #legend_ax
     
     # the region defined in the bed file will determined the graph limits
     # the flank argument expands the graph to include additional nts on 
@@ -88,29 +99,29 @@ def hits_clip_plot(   bed_gen,
         #### Lineplot part
         # Instantiate axes that will be populated with lineplot and legend (pyplot)
         # [left, bottom, width, height]
-        #TODO: move legend to its own axes (at top)
-        #TODO: remove x-axis labels from ax3 and ax2
-        #TODO: widen left margin to accomodate y-axis labels
         # note: axes instantiated with pyplot in this way will be drawn from bottom 
         # such that cleav_ax is bottom and raw_ax is top
-        
-        cleav_ax = plt.axes([0.085, 0.15, 0.9, 0.2])
+        l = 0.1
+        b = 0.15
+        w = 0.85
+        h = 0.2
+        cleav_ax = plt.axes([l, 0.15, w, h])
         cleav_ax.plot(cleavage_l, label = label)
         if max(cleavage_l, key = int) > cleav_max:
             cleav_max = max(cleavage_l, key = int)
         
-        oneD_ax = plt.axes([0.085, 0.35, 0.9, 0.2])
+        oneD_ax = plt.axes([l, 0.35, w, h])
         oneD_ax.plot(oneD_l, label = label)
         if max(oneD_l, key = int) > oneD_max:
             oneD_max = max(oneD_l, key = int)
         
-        raw_ax = plt.axes([0.085, 0.55, 0.9, 0.2])
+        raw_ax = plt.axes([l, 0.55, w, h])
         raw_ax.plot(raw_cover_l, label = label)
         if max(raw_cover_l, key = int) > raw_cover_max:
             raw_cover_max = max(raw_cover_l, key = int)
     
     # delineate query region and flank region with vspan
-    q_region_ax = fig.add_axes([0.085, 0.08, 0.9, 0.02], sharex = raw_ax)
+    q_region_ax = fig.add_axes([l, 0.08, w, 0.02], sharex = raw_ax)
     x_axis_len = bed_d['graph_end'] - bed_d['graph_start']
     q_region_ax.axvspan(flank, x_axis_len-flank, facecolor='k', alpha=0.5)
     plt.tick_params( axis='y',       # changes apply to the x-axis
@@ -165,10 +176,10 @@ def hits_clip_plot(   bed_gen,
     
     # this will be an axis area to draw the legend and some
     # text info about the gene model
-    legend_ax = plt.axes([0.085, 0.75, 0.9, 0.2], frameon=False)
+    legend_ax = plt.axes([0.085, 0.75, w, h], frameon=False)
     handles, labels = raw_ax.get_legend_handles_labels()
     ncol = math.ceil( len(labels) / 4 )
-    legend_ax.legend(handles, labels, ncol = ncol, loc=2, fontsize=12)
+    legend_ax.legend(handles, labels, ncol = ncol, loc=4)
     plt.tick_params( axis='both',       # changes apply to the x-axis
                      which='both',      # both major and minor ticks are affected
                      bottom='off',      # ticks along the bottom edge are off
@@ -179,15 +190,15 @@ def hits_clip_plot(   bed_gen,
                      labelleft='off',
                      labelright='off' )
     
-    text_s = '\n'.join( ['Coordinates: ' + bed_d['ref'] + ':' \
+    text_s = '; '.join( ['Name: ' + bed_d['name'], 
+                         'Coordinates: ' + bed_d['ref'] + ':' \
                                          + str(bed_d['start']) + '-' \
                                          + str(bed_d['end']), 
-                         'Name: ' + bed_d['name'], 
-                         'Score: ' + str(bed_d['score']), 
-                         'Strand: ' + bed_d['strand']] )
+                         'Strand: ' + bed_d['strand'],
+                         'Score: ' + str(bed_d['score'])] )
     
-    plt.text( 0.7, 0.7, text_s, 
-              horizontalalignment='center',
+    plt.text( 0, 1, text_s, 
+              horizontalalignment='left',
               verticalalignment='center',
               transform=legend_ax.transAxes, 
               bbox=dict() )

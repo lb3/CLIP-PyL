@@ -5,6 +5,8 @@
 *.pyc
 # ignore temporary files
 *~
+CLIP-PyL_graphics_test.pdf
+MANIFEST
 clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/adapter_clipped_reads_fastq/mock_CLIP_high_MW_high_MNase.HISTONLY.discardUnclipped.fq.readids
 clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/adapter_clipped_reads_fastq/mock_CLIP_low_MW_high_MNase.HISTONLY.discardUnclipped.fq.readids
 clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/adapter_clipped_reads_fastq/SLBP_CLIP_high_MW_high_MNase.HISTONLY.discardUnclipped.fq.readids
@@ -84,5 +86,3 @@ clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/bwa_samse_hg19/SLBP_CLIP_low_
 clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/bwa_samse_hg19/SLBP_CLIP_low_MW_low_MNase.HISTONLY.top_std_clv.bg
 clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/bwa_samse_hg19/SLBP_CLIP_low_MW_low_MNase.HISTONLY.top_std_cov.bg
 clippyl/sample_data/cis_element_annotations/histone_stemloop_elements.bed.sl3
-CLIP-PyL_graphics_test.pdf
-

@@ -1,0 +1,2 @@
+include LICENSE.txt
+recursive-exclude clippyl *.bg *.sl3 *.readids *.pyc *~ __pycache__

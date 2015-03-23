@@ -13,7 +13,8 @@ if sys.version_info[0] >= 3 and sys.version_info[1] > 2:
 setup(
     name='CLIP-PyL',
     version='00.01',
-    author='Lionel Brooks 3rd'
+    author='Lionel Brooks 3rd, PhD',
+    author_email='',
     packages=['clippyl'],
     package_data={'clippyl': ['clippyl/sample_data/*']},
     scripts=['scripts/clippyl-bedgraph',
@@ -21,5 +22,5 @@ setup(
              'scripts/clippyl-graphics'],
     license='LICENSE.txt',
     description='tools for finding crosslinked nucleotides in aligned CLIP-seq data',
-    long_description=open('README.txt').read()
+    long_description=open('README.md').read()
 )

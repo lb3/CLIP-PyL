@@ -32,5 +32,5 @@ setup(
              'scripts/clippyl-graphics'],
     license='MIT License', #SEE LICENSE.txt file included with this package
     description='tools for finding crosslinked nucleotides in aligned CLIP-seq data',
-    long_description=open('README').read()
+    long_description=open('README.md').read()
 )

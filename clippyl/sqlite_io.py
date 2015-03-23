@@ -1,33 +1,28 @@
 # -*- coding: utf-8 -*-
+import os
+import sqlite3
+import time
 
 from clippyl.flatfile_parsing import (FastqReader,
                                       validate_fastq_file,
                                       get_cluster_coords,
                                       Bed6Reader)
 
-#TODO: adhere to docstring conventions docs:
-#http://sphinxcontrib-napoleon.readthedocs.org/en/latest/example_google.html
-#http://legacy.python.org/dev/peps/pep-0257/
-#http://legacy.python.org/dev/peps/pep-0008/
-
-import sqlite3
-
 class SQLiteBase():
     '''
     A generic sqlite3 database interface.
     '''
     def __init__(self, fp):
+        #store filepath in class namespace for use in derived classes.
         self.fp = fp
         
         self.conn = None
-        #TODO: check for file and if it exists, warn of overwrite.
-        #(sqlite throws an error if the table already exists)
         self.conn = sqlite3.connect(fp)
         self.c = self.conn.cursor()
         self.c.execute('SELECT SQLITE_VERSION()')
         self.data = self.c.fetchone()
         print('Loaded SQLite database file at:')
-        print(fp)
+        print(self.fp)
         print('SQLite version: {0}'.format(str((self.data))))
         #TODO: print database structure (tables with # cols and rows)
     
@@ -69,17 +64,12 @@ class ReadidSQLite(SQLiteBase):
         """
         Create a SQLite database from the input fastq file.
         """
-        #TODO: does not overwrite existing table. you should catch the error and 
-        # warn user to delete the file, then quit.
-        #TODO: call get_connection
         
         print('...building the database of adapter-clipped reads')
-        print(' from the fastq file at:')
+        print('from the fastq file at:')
         print(in_fp)
         
-        # validate the file format and read id format. this is necessary because
-        # the read id must be valid to ensure that the cluster coords will be 
-        # properly parsed
+        # validate the file format
         validate_fastq_file(in_fp)
         
         with FastqReader(in_fp) as fq_gen:
@@ -94,12 +84,20 @@ class ReadidSQLite(SQLiteBase):
                         print('{0} reads written'.format(str(stat_dict['readid_cnt'])))
                     yield t
             
-            self.c.execute('''CREATE TABLE read_coords(
-                                   lane INT not null, 
-                                   tile INT not null, 
-                                   x_coord INT not null, 
-                                   y_coord INT not null,
-                                   PRIMARY KEY(lane, tile, x_coord, y_coord))''')
+            try:
+                self.c.execute('''CREATE TABLE read_coords(
+                                       lane INT not null, 
+                                       tile INT not null, 
+                                       x_coord INT not null, 
+                                       y_coord INT not null,
+                                       PRIMARY KEY(lane, tile, x_coord, y_coord))''')
+            except sqlite3.OperationalError as e:
+                print('############CLIP-PyL ERROR###########################')
+                print('CLIP-PyL found an existing database file and will not')
+                print('overwrite. If you wish to build the database then')
+                print('you must delete the file at:')
+                print(self.fp)
+                raise e
             
             sql_stmnt = '''INSERT INTO read_coords(lane, 
                                                    tile, 
@@ -108,11 +106,12 @@ class ReadidSQLite(SQLiteBase):
             
             try:
                 self.c.executemany(sql_stmnt, row_gen())
-            except sqlite3.IntegrityError:
-                #TODO: make the original error quit the program too
+            except sqlite3.IntegrityError as e:
+                print( 'CLIP-PyL encountered an error during key lookup.' )
                 print( fq_gen.d['TOPID'] )
-                print( fq_gen.get_cluster_coords() )
+                #print( fq_gen.get_cluster_coords() )
                 print( stat_dict['readid_cnt'] )
+                raise e
         
         self.conn.commit()
         self.conn.close()
@@ -137,18 +136,24 @@ class ReadidSQLite(SQLiteBase):
 class Bed6SQLite(SQLiteBase):
     
     def input_bed6(self, fp):
-        
-        self.c.execute('''CREATE TABLE bed6_intervals
-                             (
-                                ref TEXT, 
-                                start INT, 
-                                end INT, 
-                                name TEXT, 
-                                score INT, 
-                                strand TEXT, 
-                                PRIMARY KEY(strand, ref, start, end)
-                             )''')
-        
+        try:
+            self.c.execute('''CREATE TABLE bed6_intervals
+                                 (
+                                    ref TEXT, 
+                                    start INT, 
+                                    end INT, 
+                                    name TEXT, 
+                                    score INT, 
+                                    strand TEXT, 
+                                    PRIMARY KEY(strand, ref, start, end)
+                                 )''')
+        except sqlite3.OperationalError as e:
+                print('############CLIP-PyL ERROR###########################')
+                print('CLIP-PyL found an existing database file and will not')
+                print('overwrite. If you wish to build the database then')
+                print('you must delete the file at:')
+                print(self.fp)
+                raise e
         stat_dict = {}
         stat_dict['n_of_intervals'] = 0 #total number of intervals
         
@@ -190,32 +195,4 @@ class Bed6SQLite(SQLiteBase):
                             AND (start BETWEEN ? AND ? OR end BETWEEN ? AND ?)''', t)
         
         return self.c.fetchall()
-
-
-###TESTING
-#TODO: actually code th main function here and link it up to the
-# sample data in the clippyl directory structure so that it can be
-# run as a test.
-##===================MAIN FUNC AREA
-#import time
-
-#print('#######################################')
-#print('extracting readids from fastq file')
-
-#in_fp = '/storage/Ziggy_BigGuy/LB_Bioinformatics/data_Projects/Brooks_HITS_CLIP_SLBP/cleavage_site_mapping/preprocessed_Fastq_discardUnclipped/s_1xS01_sequence.PP.fastq'
-##in_fp = '/home/lbthrice/Desktop/fastq_sample/clippedOnly/SRR189782.PP.fastq'
-#out_db_fp = 'test_qname2_TILEnum2.dat'
-#start_time = time.time()
-#n = input_fastq(in_fp, out_db_fp)
-#elapsed_time = time.time() - start_time
-
-#print('qnames were written and indexed to:')
-#print(out_db_fp)
-#print('The amount of time that elapsed during the process was:')
-#print('{0:.2f}'.format(round(elapsed_time,2)) + ' seconds')
-#print('The number of reads that were processed is:')
-#print(str(n))
-#print('#######################################')
-
-
 

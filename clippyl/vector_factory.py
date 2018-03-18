@@ -6,7 +6,6 @@ hitsclip_vectors_2_bg
 import pysam
 
 from clippyl.ome_dict_io import SiteTuple, OmeDict, dump2bg
-from clippyl.pysam_cbs import fetch_hitsclip_dict
 
 class build_hitsclip_vectors():
     '''Generate basewise counts for 1D, cleavage and raw coverage from the 
@@ -46,12 +45,27 @@ class build_hitsclip_vectors():
         # delineated by the ome_coords.
         # note that it will also return reads that are only
         # partially overlapping with the region
-        c = fetch_hitsclip_dict()
-        pysam_bam_file_conn.fetch( reference,
-                                   start,
-                                   end,
-                                   callback = c )
-        fetched_alignments = c.l
+        fetched_alignments = []
+        i = pysam_bam_file_conn.fetch( reference,
+                                       start,
+                                       end )
+        for alignment in i:
+            # object class returned by fetch is pysam.AlignedSegment
+            # attributes are listed here:
+            #https://pysam.readthedocs.io/en/latest/api.html#pysam.AlignedSegment
+            d = {}
+            d['QNAME'] = alignment.qname
+            d['POS'] = alignment.pos
+            d['AEND'] = alignment.aend
+            d['CIGAR'] = alignment.cigar
+            d['IS_REVERSE'] = alignment.is_reverse
+            if alignment.is_reverse:
+                d['strand'] = '-'
+            else:
+                d['strand'] = '+'
+            d['OPT_XT'] = alignment.opt('XT')
+            fetched_alignments.append(d)
+        
         self.stat_dict['n_of_reads'] = len(fetched_alignments)
         
         # instantiate OmeDict, which will aggregate and then output the

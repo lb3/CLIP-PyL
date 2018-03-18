@@ -33,7 +33,7 @@ CLIP-PyL ships with sample data. The sample data is comprised of a Stem Loop Bin
     #    downloaded or cloned the CLIP-PyL package
     cd foo/bar/source-download-directory/
     # 2. run the set of basic tests
-    python3 unittest clippyl
+    python3 -m unittest clippyl
 
 If the test runs to completion then you should find a file named CLIP-PyL_graphics_test.pdf in your present working directory. This file contains coverage graphics for each of the replication-dependent histone genes, calculated from the SLBP HITS-CLIP data.
 
@@ -49,7 +49,7 @@ The -i parameter takes a space-delimited list of indexed bam files as its argume
 
 The -q parameter takes a file path to a bed file that lists the set of genomic intervals to be queried and graphed. In other words, this bed file specifies the genomics intervals where the graphics will be calculated. Each genomic interval listed will produce one page in the output pdf file. Multiple coverage plots will be generated on each page.
 
-Here is a usage example that utilizes the sample data files.
+Here is an example that utilizes the sample data files:
 
     #!/bin/bash
     BAM_FILE_DIR="clippyl/sample_data/HITS-CLIP_SLBP_histone_mRNA_01/bwa_samse_hg19"
